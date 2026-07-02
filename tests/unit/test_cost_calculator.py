@@ -17,3 +17,12 @@ def test_unknown_model_returns_none() -> None:
 
     assert calculator.calculate(model="missing", prompt_tokens=1000, completion_tokens=2000) is None
 
+
+def test_deepseek_v4_flash_pricing_file_entry() -> None:
+    calculator = CostCalculator(PricingTable.from_yaml("config/pricing.example.yaml"))
+
+    assert calculator.calculate(
+        model="deepseek-v4-flash",
+        prompt_tokens=1_000_000,
+        completion_tokens=1_000_000,
+    ) == Decimal("0.420000")

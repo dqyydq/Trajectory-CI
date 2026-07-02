@@ -6,3 +6,12 @@ models:
     input_per_million: 0.15
     output_per_million: 0.60
 
+  # DeepSeek official pricing is split by cache hit/miss input tokens.
+  # Phase 1 cost calculation does not track cache-hit tokens yet, so use
+  # cache-miss input pricing as the conservative default.
+  deepseek-v4-flash:
+    input_per_million: 0.14
+    output_per_million: 0.28
+  deepseek-v4-pro:
+    input_per_million: 0.435
+    output_per_million: 0.87
