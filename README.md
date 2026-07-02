@@ -52,7 +52,7 @@ Fast tests that do not call external networks or real OpenAI:
 
 ```powershell
 .venv\Scripts\activate
-python -m pytest -q tests\unit tests\integration\test_environment.py tests\integration\test_openai_proxy.py tests\integration\test_openai_proxy_streaming.py
+python -m pytest -q tests\test_unit_cost_calculator.py tests\test_unit_dashboard_tree.py tests\test_unit_sanitizer.py tests\test_unit_streaming.py tests\test_unit_trace_recorder.py tests\test_integration_environment.py tests\test_integration_openai_proxy.py tests\test_integration_openai_proxy_streaming.py
 ```
 
 Full local validation, including PostgreSQL-backed concurrency and crash-tolerance checks:
