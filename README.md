@@ -45,6 +45,32 @@ curl -N http://localhost:8000/v1/chat/completions \
   -d '{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"Say hi"}]}'
 ```
 
+
+## Test strategy
+
+Fast tests that do not call external networks or real OpenAI:
+
+```powershell
+.venv\Scripts\activate
+python -m pytest -q tests\unit tests\integration\test_environment.py tests\integration\test_openai_proxy.py tests\integration\test_openai_proxy_streaming.py
+```
+
+Full local validation, including PostgreSQL-backed concurrency and crash-tolerance checks:
+
+```powershell
+.venv\Scripts\activate
+python -m pytest -q
+```
+
+Coverage focus:
+
+- Environment smoke: FastAPI app and `/health` can run.
+- Unit tests: cost calculation, body/header sanitizing, streaming aggregation, recorder state transitions, dashboard tree building.
+- Concurrency: concurrent `X-Session-Id` calls reuse one trace through the PostgreSQL partial unique index and upsert path.
+- Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic `stream_options.include_usage`.
+- Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
+- Dashboard: recursive tree logic is covered by unit tests; visual layout should still be checked manually with Streamlit.
+
 ## Configuration
 
 Environment variables are loaded from `.env`.
