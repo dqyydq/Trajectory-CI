@@ -76,3 +76,24 @@ def test_non_streaming_proxy_records_success(monkeypatch) -> None:
     assert FakeRecorder.finished is not None
     assert FakeRecorder.finished.total_tokens == 5
     assert FakeRecorder.finished.status.value == "success"
+
+
+def test_openai_proxy_rejects_missing_gateway_key_when_auth_enabled(monkeypatch) -> None:
+    FakeRecorder.finished = None
+    app.dependency_overrides[get_db_session] = fake_db_session
+    app.dependency_overrides[get_settings] = lambda: Settings(gateway_api_keys="gateway-key")
+    monkeypatch.setattr(openai_proxy, "TraceRecorder", FakeRecorder)
+    monkeypatch.setattr(openai_proxy, "OpenAIProxyClient", FakeOpenAIProxyClient)
+
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/v1/chat/completions",
+                headers={"Authorization": "Bearer test"},
+                json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "hello"}]},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    assert FakeRecorder.finished is None

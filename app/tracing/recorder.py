@@ -30,6 +30,7 @@ class TraceRecorder:
         span_type: SpanType = SpanType.llm_call,
         eval_task_id: str | None = None,
         eval_run_id: str | None = None,
+        tenant_id: str | None = None,
     ) -> SpanHandle:
         started_at = datetime.now(UTC)
         trace_id = await self._get_or_create_trace(
@@ -37,6 +38,7 @@ class TraceRecorder:
             started_at=started_at,
             eval_task_id=eval_task_id,
             eval_run_id=eval_run_id,
+            tenant_id=tenant_id or self.settings.default_tenant_id,
         )
         span = Span(
             trace_id=trace_id,
@@ -93,9 +95,10 @@ class TraceRecorder:
         started_at: datetime,
         eval_task_id: str | None,
         eval_run_id: str | None,
+        tenant_id: str,
     ) -> UUID:
         if session_id is None:
-            trace = Trace(started_at=started_at, eval_task_id=eval_task_id, eval_run_id=eval_run_id)
+            trace = Trace(started_at=started_at, tenant_id=tenant_id, eval_task_id=eval_task_id, eval_run_id=eval_run_id)
             self.session.add(trace)
             await self.session.flush()
             return trace.trace_id
@@ -104,6 +107,7 @@ class TraceRecorder:
             insert(Trace)
             .values(
                 session_id=session_id,
+                tenant_id=tenant_id,
                 started_at=started_at,
                 eval_task_id=eval_task_id,
                 eval_run_id=eval_run_id,

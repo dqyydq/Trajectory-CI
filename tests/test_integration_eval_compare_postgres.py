@@ -38,12 +38,14 @@ async def _database_available(session_factory) -> bool:
 
 async def test_compare_persists_not_run_result() -> None:
     engine, session_factory = _make_session_factory()
+    db_available = False
     task_id = f"task-{uuid4()}"
     temp_dir = Path(".test_tmp")
     temp_dir.mkdir(exist_ok=True)
     task_set_path = temp_dir / f"tasks-{uuid4()}.yaml"
     try:
-        if not await _database_available(session_factory):
+        db_available = await _database_available(session_factory)
+        if not db_available:
             pytest.skip("PostgreSQL is not available")
         task_set_path.write_text(
             f"""
@@ -98,11 +100,14 @@ tasks:
         assert len(rows) == 1
         assert rows[0].detail["run_b"]["status"] == "not_run"
     finally:
-        async with session_factory() as session:
-            trace_ids = (await session.execute(select(Trace.trace_id).where(Trace.eval_task_id == task_id))).scalars().all()
-            if trace_ids:
-                await session.execute(delete(Span).where(Span.trace_id.in_(trace_ids)))
-                await session.execute(delete(Trace).where(Trace.trace_id.in_(trace_ids)))
-            await session.execute(delete(EvalReport).where(EvalReport.task_set_name == "mini"))
-            await session.commit()
+        if db_available:
+            async with session_factory() as session:
+                trace_ids = (await session.execute(select(Trace.trace_id).where(Trace.eval_task_id == task_id))).scalars().all()
+                if trace_ids:
+                    await session.execute(delete(Span).where(Span.trace_id.in_(trace_ids)))
+                    await session.execute(delete(Trace).where(Trace.trace_id.in_(trace_ids)))
+                await session.execute(delete(EvalReport).where(EvalReport.task_set_name == "mini"))
+                await session.commit()
+        if task_set_path.exists():
+            task_set_path.unlink()
         await engine.dispose()

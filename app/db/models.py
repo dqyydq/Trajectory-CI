@@ -35,6 +35,7 @@ class Trace(Base):
 
     trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, default="default", server_default="default")
     eval_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     eval_run_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -128,6 +129,7 @@ Index(
     postgresql_where=Trace.session_id.is_not(None),
 )
 Index("ix_traces_session_started_at", Trace.session_id, Trace.started_at)
+Index("ix_traces_tenant_started_at", Trace.tenant_id, Trace.started_at)
 Index("ix_traces_eval_task_run", Trace.eval_task_id, Trace.eval_run_id)
 Index("ix_spans_trace_started_at", Span.trace_id, Span.started_at)
 Index("ix_spans_parent_span_id", Span.parent_span_id)

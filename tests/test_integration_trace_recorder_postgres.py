@@ -109,3 +109,31 @@ async def test_started_span_remains_in_progress_if_not_finished() -> None:
             await _cleanup(session_factory, session_id)
     finally:
         await engine.dispose()
+
+
+async def test_start_span_persists_tenant_id() -> None:
+    engine, session_factory = _make_session_factory()
+    try:
+        if not await _database_available(session_factory):
+            pytest.skip("PostgreSQL is not available")
+
+        session_id = f"tenant-{uuid4()}"
+        try:
+            async with session_factory() as session:
+                recorder = TraceRecorder(session, Settings())
+                await recorder.start_span(
+                    session_id=session_id,
+                    tenant_id="tenant-a",
+                    model="gpt-4o-mini",
+                    request_body={"model": "gpt-4o-mini"},
+                    is_stream=False,
+                )
+
+            async with session_factory() as session:
+                tenant_id = await session.scalar(select(Trace.tenant_id).where(Trace.session_id == session_id))
+
+            assert tenant_id == "tenant-a"
+        finally:
+            await _cleanup(session_factory, session_id)
+    finally:
+        await engine.dispose()

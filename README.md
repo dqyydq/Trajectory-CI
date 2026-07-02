@@ -1,10 +1,10 @@
 # Agent Observability Gateway
 
-Zero-intrusion local gateway for OpenAI-compatible LLM agent calls: point an agent's `base_url` at this service and get traces, token usage, latency, and cost records without adding instrumentation to the agent code.
+Zero-intrusion local gateway for OpenAI-compatible and Anthropic LLM agent calls: point an agent's `base_url` at this service and get traces, token usage, latency, and cost records without adding instrumentation to the agent code.
 
 ## Architecture
 
-Agent client -> FastAPI OpenAI-compatible proxy -> real OpenAI API. The proxy records traces/spans in PostgreSQL through SQLAlchemy async models. Streamlit reads PostgreSQL directly for the dashboard. Cost calculation uses a YAML pricing table.
+Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL through SQLAlchemy async models. Streamlit reads PostgreSQL directly for the dashboard. Cost calculation uses a YAML pricing table.
 
 ## Local setup
 
@@ -25,7 +25,7 @@ streamlit run dashboard\streamlit_app.py
 
 ## Use with an OpenAI-compatible client
 
-Set the client's base URL to `http://localhost:8000/v1` and keep using your real OpenAI API key. The gateway forwards the `Authorization` header and does not store the key.
+Set the client's base URL to `http://localhost:8000/v1` and keep using your real provider API key. The gateway forwards the upstream auth header and does not store the key.
 
 ```bash
 curl http://localhost:8000/v1/chat/completions \
@@ -45,6 +45,28 @@ curl -N http://localhost:8000/v1/chat/completions \
   -d '{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"Say hi"}]}'
 ```
 
+## Anthropic Messages API
+
+The gateway also proxies Anthropic Messages API calls at `POST /v1/messages`. The response shape stays Anthropic-native; the gateway only records trace, usage, latency, and cost metadata.
+
+```bash
+curl http://localhost:8000/v1/messages \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -H "X-Session-Id: anthropic-demo" \
+  -d '{"model":"claude-3-5-sonnet-latest","max_tokens":128,"messages":[{"role":"user","content":"Say hi"}]}'
+```
+
+For streaming, send `"stream": true`; the gateway forwards Anthropic SSE chunks unchanged and records a best-effort aggregate response when the stream closes.
+
+## Gateway auth, tenants, and alerts
+
+Gateway auth is optional and disabled by default. To enable it, set `GATEWAY_API_KEYS` to a comma-separated list and send `X-Gateway-Api-Key` on gateway requests. This is separate from upstream provider auth; `Authorization`, `x-api-key`, and provider version headers still pass through to the provider.
+
+Use `X-Tenant-Id` to label traces by caller. If omitted, traces use `DEFAULT_TENANT_ID`.
+
+Alerts are optional and disabled by default. When `ALERTS_ENABLED=true`, the gateway evaluates recent completed spans after each request and logs warnings for high error rate, high p95 latency, or model cost spikes. Set `ALERT_WEBHOOK_URL` to POST alert payloads to an external receiver.
 
 ## Test strategy
 
@@ -52,7 +74,7 @@ Fast tests that do not call external networks or real OpenAI:
 
 ```powershell
 .venv\Scripts\activate
-python -m pytest -q tests\test_unit_cost_calculator.py tests\test_unit_dashboard_tree.py tests\test_unit_sanitizer.py tests\test_unit_streaming.py tests\test_unit_trace_recorder.py tests\test_integration_environment.py tests\test_integration_openai_proxy.py tests\test_integration_openai_proxy_streaming.py
+python -m pytest -q tests\test_unit_cost_calculator.py tests\test_unit_dashboard_tree.py tests\test_unit_sanitizer.py tests\test_unit_streaming.py tests\test_unit_trace_recorder.py tests\test_unit_protocols_phase3.py tests\test_unit_alerts.py tests\test_integration_environment.py tests\test_integration_openai_proxy.py tests\test_integration_openai_proxy_streaming.py tests\test_integration_anthropic_proxy.py
 ```
 
 Full local validation, including PostgreSQL-backed concurrency and crash-tolerance checks:
@@ -65,12 +87,11 @@ python -m pytest -q
 Coverage focus:
 
 - Environment smoke: FastAPI app and `/health` can run.
-- Unit tests: cost calculation, body/header sanitizing, streaming aggregation, recorder state transitions, dashboard tree building.
+- Unit tests: cost calculation, body/header sanitizing, streaming aggregation, recorder state transitions, dashboard tree building, gateway auth, Anthropic aggregation, and alert rules.
 - Concurrency: concurrent `X-Session-Id` calls reuse one trace through the PostgreSQL partial unique index and upsert path.
-- Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic `stream_options.include_usage`.
+- Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic OpenAI `stream_options.include_usage`.
 - Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
 - Dashboard: recursive tree logic is covered by unit tests; visual layout should still be checked manually with Streamlit.
-
 
 ## Phase 2 trajectory evaluation
 
@@ -120,7 +141,9 @@ Environment variables are loaded from `.env`.
 - `DATABASE_URL`: async SQLAlchemy URL for the FastAPI service.
 - `DASHBOARD_DATABASE_URL`: sync PostgreSQL URL for Streamlit, for example `postgresql+psycopg://postgres:postgres@localhost:5432/agent_observability`.
 - `OPENAI_BASE_URL`: upstream OpenAI-compatible API base URL.
+- `ANTHROPIC_BASE_URL`: upstream Anthropic API base URL.
 - `PRICING_CONFIG_PATH`: YAML pricing file path.
 - `RECORD_REQUEST_BODY`, `RECORD_RESPONSE_BODY`, `MAX_BODY_BYTES`: request/response body storage guardrails.
-
-
+- `GATEWAY_API_KEYS`: optional comma-separated gateway API keys. Empty disables gateway auth.
+- `DEFAULT_TENANT_ID`: tenant label used when `X-Tenant-Id` is omitted.
+- `ALERTS_ENABLED`, `ALERT_*`: optional anomaly detection and webhook alert configuration.

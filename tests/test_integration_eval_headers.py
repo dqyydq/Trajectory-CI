@@ -70,6 +70,7 @@ def test_proxy_passes_eval_headers_to_recorder(monkeypatch) -> None:
                     "X-Eval-Task-Id": "task-a",
                     "X-Eval-Run-Id": "v2",
                     "X-Span-Type": "llm_judge",
+                    "X-Tenant-Id": "tenant-eval",
                 },
                 json={"model": "gpt-test", "messages": [{"role": "user", "content": "hi"}]},
             )
@@ -80,3 +81,4 @@ def test_proxy_passes_eval_headers_to_recorder(monkeypatch) -> None:
     assert HeaderRecorder.started["eval_task_id"] == "task-a"
     assert HeaderRecorder.started["eval_run_id"] == "v2"
     assert HeaderRecorder.started["span_type"] == SpanType.llm_judge
+    assert HeaderRecorder.started["tenant_id"] == "tenant-eval"

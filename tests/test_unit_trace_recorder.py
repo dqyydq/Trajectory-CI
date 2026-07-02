@@ -37,7 +37,7 @@ async def test_start_span_inserts_in_progress_span(monkeypatch) -> None:
     recorder = TraceRecorder(session, Settings())
     trace_id = uuid4()
 
-    async def fake_get_or_create_trace(*, session_id, started_at, eval_task_id, eval_run_id):
+    async def fake_get_or_create_trace(*, session_id, started_at, eval_task_id, eval_run_id, tenant_id):
         return trace_id
 
     monkeypatch.setattr(recorder, "_get_or_create_trace", fake_get_or_create_trace)

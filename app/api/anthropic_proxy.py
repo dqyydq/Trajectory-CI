@@ -11,18 +11,13 @@ from app.alerts.service import evaluate_alerts
 from app.core.config import Settings, get_settings
 from app.db.models import SpanStatus, SpanType
 from app.db.session import get_db_session
+from app.protocols.anthropic import aggregate_anthropic_stream, anthropic_usage, parse_anthropic_sse_line
 from app.protocols.common import calculate_cost, enforce_gateway_auth, response_headers, tenant_id_from_request
-from app.proxy.openai_client import OpenAIProxyClient
-from app.proxy.streaming import aggregate_openai_stream, ensure_stream_usage, parse_sse_data_line
+from app.proxy.anthropic_client import AnthropicProxyClient
 from app.tracing.recorder import TraceRecorder
 from app.tracing.schemas import SpanResult
 
 router = APIRouter()
-
-
-def _usage(response_body: dict[str, Any] | None) -> tuple[int | None, int | None, int | None]:
-    usage = (response_body or {}).get("usage") or {}
-    return usage.get("prompt_tokens"), usage.get("completion_tokens"), usage.get("total_tokens")
 
 
 def _error_message(body: Any) -> str | None:
@@ -30,6 +25,8 @@ def _error_message(body: Any) -> str | None:
         error = body.get("error")
         if isinstance(error, dict):
             return str(error.get("message") or error)
+        if error is not None:
+            return str(error)
     return None
 
 
@@ -40,8 +37,8 @@ def _span_type_from_request(request: Request) -> SpanType:
         return SpanType.llm_call
 
 
-@router.post("/v1/chat/completions")
-async def chat_completions(
+@router.post("/v1/messages")
+async def messages(
     request: Request,
     db_session: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
@@ -76,14 +73,14 @@ async def _non_streaming_response(
     db_session: AsyncSession,
     tenant_id: str,
 ) -> Response:
-    client = OpenAIProxyClient(settings)
-    upstream = await client.post_chat_completions(headers=dict(request.headers), body=body)
+    client = AnthropicProxyClient(settings)
+    upstream = await client.post_messages(headers=dict(request.headers), body=body)
     try:
         response_body = upstream.json()
     except ValueError:
         response_body = {"raw": upstream.text}
 
-    prompt_tokens, completion_tokens, total_tokens = _usage(response_body if isinstance(response_body, dict) else None)
+    prompt_tokens, completion_tokens, total_tokens = anthropic_usage(response_body if isinstance(response_body, dict) else None)
     cost = calculate_cost(
         settings=settings,
         model=body.get("model"),
@@ -120,12 +117,8 @@ async def _streaming_response(
     db_session: AsyncSession,
     tenant_id: str,
 ) -> Response:
-    forwarded_body = ensure_stream_usage(body)
-    client = OpenAIProxyClient(settings)
-    http_client, upstream, context = await client.stream_chat_completions(
-        headers=dict(request.headers),
-        body=forwarded_body,
-    )
+    client = AnthropicProxyClient(settings)
+    http_client, upstream, context = await client.stream_messages(headers=dict(request.headers), body=body)
 
     if not upstream.is_success:
         content = await upstream.aread()
@@ -137,11 +130,7 @@ async def _streaming_response(
         await http_client.aclose()
         await recorder.finish_span(
             handle,
-            SpanResult(
-                status=SpanStatus.error,
-                response_body=response_body,
-                error_message=_error_message(response_body),
-            ),
+            SpanResult(status=SpanStatus.error, response_body=response_body, error_message=_error_message(response_body)),
         )
         await evaluate_alerts(session=db_session, settings=settings, tenant_id=tenant_id, model=body.get("model"))
         return Response(
@@ -151,18 +140,18 @@ async def _streaming_response(
             headers=response_headers(dict(upstream.headers)),
         )
 
-    chunks: list[dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
 
     async def generate() -> AsyncIterator[bytes]:
         try:
             async for line in upstream.aiter_lines():
                 raw = f"{line}\n".encode("utf-8")
-                parsed = parse_sse_data_line(raw)
+                parsed = parse_anthropic_sse_line(raw)
                 if parsed is not None:
-                    chunks.append(parsed)
+                    events.append(parsed)
                 yield raw
-            response_body = aggregate_openai_stream(chunks)
-            prompt_tokens, completion_tokens, total_tokens = _usage(response_body)
+            response_body = aggregate_anthropic_stream(events)
+            prompt_tokens, completion_tokens, total_tokens = anthropic_usage(response_body)
             cost = calculate_cost(
                 settings=settings,
                 model=body.get("model"),
@@ -184,7 +173,7 @@ async def _streaming_response(
         except Exception as exc:
             await recorder.finish_span(
                 handle,
-                SpanResult(status=SpanStatus.error, response_body={"_stream_chunks": chunks}, error_message=str(exc)),
+                SpanResult(status=SpanStatus.error, response_body={"_stream_events": events}, error_message=str(exc)),
             )
             await evaluate_alerts(session=db_session, settings=settings, tenant_id=tenant_id, model=body.get("model"))
             raise
