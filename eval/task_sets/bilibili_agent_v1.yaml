@@ -1,11 +1,23 @@
 tasks:
-  - task_id: "hello_basic"
-    description: "Basic hello response smoke test"
-    input: "Hello"
+  - task_id: "classify_basic"
+    description: "Organize a folder with videos into topic categories."
+    input: |
+      Please organize this favorites folder: [video list...]
     judge_rubric: |
-      A good response should greet the user and offer help.
+      A good response should identify multiple categories, avoid omissions, and explain the grouping clearly.
     checks:
-      - type: response_contains
-        keyword: "Hello"
+      - type: tool_called
+        tool_name: classify_video
       - type: max_steps
         value: 8
+      - type: response_contains
+        keyword: "分类完成"
+      - type: custom
+        function: "eval.custom_checks.no_duplicate_categories"
+
+  - task_id: "handle_empty_folder"
+    description: "Handle an empty favorites folder."
+    input: "Please organize this favorites folder: []"
+    checks:
+      - type: response_contains
+        keyword: "没有内容"

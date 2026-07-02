@@ -1,0 +1,18 @@
+tasks:
+  - task_id: "deepseek_hello"
+    description: "DeepSeek should answer a basic greeting."
+    input: "Hello. Reply in one short sentence."
+    judge_rubric: |
+      A good response should greet the user or offer help in one concise sentence.
+    checks:
+      - type: max_steps
+        value: 3
+
+  - task_id: "deepseek_reasoning"
+    description: "DeepSeek should explain why observability matters for LLM agents."
+    input: "In one short paragraph, explain why observability matters for LLM agents."
+    judge_rubric: |
+      A good response should mention traceability, debugging, quality, or cost/latency visibility.
+    checks:
+      - type: max_steps
+        value: 3
