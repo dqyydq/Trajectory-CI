@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,13 +27,21 @@ class TraceRecorder:
         request_body: Any,
         is_stream: bool,
         parent_span_id: UUID | None = None,
+        span_type: SpanType = SpanType.llm_call,
+        eval_task_id: str | None = None,
+        eval_run_id: str | None = None,
     ) -> SpanHandle:
         started_at = datetime.now(UTC)
-        trace_id = await self._get_or_create_trace(session_id=session_id, started_at=started_at)
+        trace_id = await self._get_or_create_trace(
+            session_id=session_id,
+            started_at=started_at,
+            eval_task_id=eval_task_id,
+            eval_run_id=eval_run_id,
+        )
         span = Span(
             trace_id=trace_id,
             parent_span_id=parent_span_id,
-            span_type=SpanType.llm_call,
+            span_type=span_type,
             model=model,
             request_body=limit_json_body(
                 request_body,
@@ -78,16 +86,28 @@ class TraceRecorder:
         )
         await self.session.commit()
 
-    async def _get_or_create_trace(self, *, session_id: str | None, started_at: datetime) -> UUID:
+    async def _get_or_create_trace(
+        self,
+        *,
+        session_id: str | None,
+        started_at: datetime,
+        eval_task_id: str | None,
+        eval_run_id: str | None,
+    ) -> UUID:
         if session_id is None:
-            trace = Trace(started_at=started_at)
+            trace = Trace(started_at=started_at, eval_task_id=eval_task_id, eval_run_id=eval_run_id)
             self.session.add(trace)
             await self.session.flush()
             return trace.trace_id
 
         statement = (
             insert(Trace)
-            .values(session_id=session_id, started_at=started_at)
+            .values(
+                session_id=session_id,
+                started_at=started_at,
+                eval_task_id=eval_task_id,
+                eval_run_id=eval_run_id,
+            )
             .on_conflict_do_update(
                 index_elements=[Trace.session_id],
                 index_where=Trace.session_id.is_not(None),
@@ -97,5 +117,3 @@ class TraceRecorder:
         )
         result = await self.session.execute(statement)
         return result.scalar_one()
-
-

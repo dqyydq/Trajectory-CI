@@ -71,6 +71,48 @@ Coverage focus:
 - Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
 - Dashboard: recursive tree logic is covered by unit tests; visual layout should still be checked manually with Streamlit.
 
+
+## Phase 2 trajectory evaluation
+
+Phase 2 compares two runs of the same task set using traces already captured by the gateway.
+
+When running an agent for evaluation, add these headers to each LLM call:
+
+- `X-Eval-Task-Id`: task id from the YAML task set.
+- `X-Eval-Run-Id`: run id, for example `v1` or `v2`.
+- `X-Session-Id`: optional. If used, keep it unique per task/run, for example `{task_set}:{task_id}:{run_id}`.
+
+Task sets live under `eval/task_sets/`:
+
+```yaml
+tasks:
+  - task_id: "hello_basic"
+    description: "Basic hello response smoke test"
+    input: "Hello"
+    checks:
+      - type: response_contains
+        keyword: "Hello"
+      - type: max_steps
+        value: 8
+```
+
+Run a comparison:
+
+```powershell
+.venv\Scripts\activate
+python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --skip-judge
+```
+
+Use `--skip-judge` for local hard-check-only validation. Omit it to call the configured judge model through the local gateway. Judge calls are tagged with `X-Span-Type: llm_judge`, and compare queries exclude judge spans from agent trajectory data.
+
+Export a markdown report:
+
+```powershell
+python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --export-markdown report.md
+```
+
+The Streamlit dashboard has an `Eval` tab for historical reports, per-task diffs, and linked Phase 1 trace trees.
+
 ## Configuration
 
 Environment variables are loaded from `.env`.

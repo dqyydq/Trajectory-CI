@@ -66,3 +66,25 @@ def load_cost_trend(database_url: str):
     )
     return pd.read_sql(query, _engine(database_url))
 
+def load_eval_reports(database_url: str):
+    query = text(
+        """
+        SELECT report_id::text, task_set_name, run_id_a, run_id_b, created_at, summary
+        FROM eval_reports
+        ORDER BY created_at DESC
+        LIMIT 100
+        """
+    )
+    return pd.read_sql(query, _engine(database_url))
+
+
+def load_eval_task_results(database_url: str, report_id: str):
+    query = text(
+        """
+        SELECT task_id, run_a_status, run_a_judge_score, run_b_status, run_b_judge_score, regressed, detail
+        FROM eval_task_results
+        WHERE report_id::text = :report_id
+        ORDER BY task_id ASC
+        """
+    )
+    return pd.read_sql(query, _engine(database_url), params={"report_id": report_id})

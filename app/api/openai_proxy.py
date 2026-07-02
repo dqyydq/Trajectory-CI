@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.cost.calculator import CostCalculator
 from app.cost.pricing import PricingTable
-from app.db.models import SpanStatus
+from app.db.models import SpanStatus, SpanType
 from app.db.session import get_db_session
 from app.proxy.openai_client import OpenAIProxyClient
 from app.proxy.streaming import aggregate_openai_stream, ensure_stream_usage, parse_sse_data_line
@@ -47,12 +47,21 @@ async def chat_completions(
     body = await request.json()
     is_stream = bool(body.get("stream"))
     session_id = request.headers.get("X-Session-Id")
+    eval_task_id = request.headers.get("X-Eval-Task-Id")
+    eval_run_id = request.headers.get("X-Eval-Run-Id")
+    try:
+        span_type = SpanType(request.headers.get("X-Span-Type", SpanType.llm_call.value))
+    except ValueError:
+        span_type = SpanType.llm_call
     recorder = TraceRecorder(db_session, settings)
     handle = await recorder.start_span(
         session_id=session_id,
         model=body.get("model"),
         request_body=body,
         is_stream=is_stream,
+        span_type=span_type,
+        eval_task_id=eval_task_id,
+        eval_run_id=eval_run_id,
     )
 
     if is_stream:

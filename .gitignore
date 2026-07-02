@@ -30,3 +30,4 @@ Thumbs.db
 # Runtime data
 *.log
 .streamlit/secrets.toml
+.test_tmp/

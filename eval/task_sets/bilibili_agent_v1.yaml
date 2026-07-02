@@ -1,0 +1,11 @@
+tasks:
+  - task_id: "hello_basic"
+    description: "Basic hello response smoke test"
+    input: "Hello"
+    judge_rubric: |
+      A good response should greet the user and offer help.
+    checks:
+      - type: response_contains
+        keyword: "Hello"
+      - type: max_steps
+        value: 8
