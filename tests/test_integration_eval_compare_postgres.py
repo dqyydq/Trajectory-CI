@@ -108,6 +108,4 @@ tasks:
                     await session.execute(delete(Trace).where(Trace.trace_id.in_(trace_ids)))
                 await session.execute(delete(EvalReport).where(EvalReport.task_set_name == "mini"))
                 await session.commit()
-        if task_set_path.exists():
-            task_set_path.unlink()
         await engine.dispose()
