@@ -4,7 +4,7 @@ Zero-intrusion local gateway for OpenAI-compatible and Anthropic LLM agent calls
 
 ## Architecture
 
-Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL through SQLAlchemy async models. Streamlit reads PostgreSQL directly for the dashboard. Cost calculation uses a YAML pricing table.
+Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL through SQLAlchemy async models. The React dashboard reads FastAPI dashboard APIs. Cost calculation uses a YAML pricing table.
 
 ## Local setup
 
@@ -16,7 +16,17 @@ alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
-Start the dashboard in another terminal:
+Start the React dashboard in another terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:5173`. The Vite dev server proxies `/api` requests to FastAPI on `http://127.0.0.1:8000`.
+
+The previous Streamlit dashboard is kept as a legacy fallback:
 
 ```powershell
 .venv\Scripts\activate
@@ -47,7 +57,7 @@ curl -N http://localhost:8000/v1/chat/completions \
 
 ## Anthropic Messages API
 
-The gateway also proxies Anthropic Messages API calls at `POST /v1/messages`. The response shape stays Anthropic-native; the gateway only records trace, usage, latency, and cost metadata.
+The gateway proxies Anthropic Messages API calls at `POST /v1/messages`. The response shape stays Anthropic-native; the gateway only records trace, usage, latency, and cost metadata.
 
 ```bash
 curl http://localhost:8000/v1/messages \
@@ -68,30 +78,46 @@ Use `X-Tenant-Id` to label traces by caller. If omitted, traces use `DEFAULT_TEN
 
 Alerts are optional and disabled by default. When `ALERTS_ENABLED=true`, the gateway evaluates recent completed spans after each request and logs warnings for high error rate, high p95 latency, or model cost spikes. Set `ALERT_WEBHOOK_URL` to POST alert payloads to an external receiver.
 
+## Dashboard API
+
+The React dashboard reads JSON from FastAPI endpoints under `/api/dashboard/*`:
+
+- `/api/dashboard/filters`
+- `/api/dashboard/summary`
+- `/api/dashboard/spans`
+- `/api/dashboard/traces/{trace_id}`
+- `/api/dashboard/cost-trend`
+- `/api/dashboard/model-breakdown`
+- `/api/dashboard/alerts`
+- `/api/dashboard/eval-reports`
+
+These endpoints wrap the existing dashboard query layer and return JSON-safe records for the frontend.
+
 ## Test strategy
 
 Fast tests that do not call external networks or real OpenAI:
 
 ```powershell
 .venv\Scripts\activate
-python -m pytest -q tests\test_unit_cost_calculator.py tests\test_unit_dashboard_tree.py tests\test_unit_sanitizer.py tests\test_unit_streaming.py tests\test_unit_trace_recorder.py tests\test_unit_protocols_phase3.py tests\test_unit_alerts.py tests\test_integration_environment.py tests\test_integration_openai_proxy.py tests\test_integration_openai_proxy_streaming.py tests\test_integration_anthropic_proxy.py
+python -m pytest -q
 ```
 
-Full local validation, including PostgreSQL-backed concurrency and crash-tolerance checks:
+Frontend validation:
 
 ```powershell
-.venv\Scripts\activate
-python -m pytest -q
+cd frontend
+npm install
+npm run build
 ```
 
 Coverage focus:
 
 - Environment smoke: FastAPI app and `/health` can run.
 - Unit tests: cost calculation, body/header sanitizing, streaming aggregation, recorder state transitions, dashboard tree building, gateway auth, Anthropic aggregation, and alert rules.
+- Dashboard API: JSON serialization for Decimal/Timestamp values and record endpoints.
 - Concurrency: concurrent `X-Session-Id` calls reuse one trace through the PostgreSQL partial unique index and upsert path.
 - Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic OpenAI `stream_options.include_usage`.
 - Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
-- Dashboard: recursive tree logic is covered by unit tests; visual layout should still be checked manually with Streamlit.
 
 ## Phase 2 trajectory evaluation
 
@@ -132,14 +158,14 @@ Export a markdown report:
 python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --export-markdown report.md
 ```
 
-The Streamlit dashboard has an `Eval` tab for historical reports, per-task diffs, and linked Phase 1 trace trees.
+The React dashboard has Eval and Trace views for historical reports, per-task diffs, and linked Phase 1 trace inspection.
 
 ## Configuration
 
 Environment variables are loaded from `.env`.
 
 - `DATABASE_URL`: async SQLAlchemy URL for the FastAPI service.
-- `DASHBOARD_DATABASE_URL`: sync PostgreSQL URL for Streamlit, for example `postgresql+psycopg://postgres:postgres@localhost:5432/agent_observability`.
+- `DASHBOARD_DATABASE_URL`: sync PostgreSQL URL for dashboard queries, for example `postgresql+psycopg://postgres:postgres@localhost:5432/agent_observability`.
 - `OPENAI_BASE_URL`: upstream OpenAI-compatible API base URL.
 - `ANTHROPIC_BASE_URL`: upstream Anthropic API base URL.
 - `PRICING_CONFIG_PATH`: YAML pricing file path.
