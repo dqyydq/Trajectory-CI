@@ -1,0 +1,39 @@
+gate:
+  max_regressed_tasks: 0
+  max_failed_tasks: 0
+  max_not_run_tasks: 0
+  max_cost_increase_pct: 15
+  max_latency_increase_pct: 20
+
+tasks:
+  - task_id: "observability_release_value"
+    description: "Explain why agent observability matters as release evidence, not just logging."
+    input: "A team says trace and cost dashboards are just nice-to-have logs. Explain why they matter when releasing an LLM agent change."
+    judge_rubric: |
+      Score high if the answer connects observability to release decisions, regression diagnosis,
+      task trajectory evidence, cost/latency risk, and failure debugging. Penalize generic answers
+      that only say logging helps debugging.
+    checks:
+      - type: max_steps
+        value: 4
+
+  - task_id: "cost_quality_tradeoff"
+    description: "Decide whether a cheaper candidate agent should ship when quality may regress."
+    input: "A candidate agent prompt reduces tokens by making answers much shorter, but early testing suggests it may omit caveats. Should this candidate ship? Answer as an engineering release recommendation."
+    judge_rubric: |
+      Score high if the answer explicitly weighs quality, cost, latency, and regression risk,
+      and recommends a gate or further evaluation rather than shipping solely because it is cheaper.
+      Penalize answers that optimize only for cost or brevity.
+    checks:
+      - type: max_steps
+        value: 4
+
+  - task_id: "failed_agent_investigation"
+    description: "Identify the concrete evidence to inspect when an agent task regresses."
+    input: "An agent version passed last week but now fails halfway through a tool-using task. What evidence should you inspect first, and how would it guide the fix?"
+    judge_rubric: |
+      Score high if the answer prioritizes trace steps, tool calls, model outputs, hard-check or judge
+      failure reasons, errors, latency, and token/cost anomalies. Penalize vague debugging advice.
+    checks:
+      - type: max_steps
+        value: 4

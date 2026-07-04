@@ -46,6 +46,20 @@ The real API example uses:
 
 The matching task set is `eval/task_sets/deepseek_smoke.yaml`.
 
+
+## Agent release quality case
+
+This is the real Trajectory CI case study used in the README. It compares a complete baseline prompt against a shorter candidate prompt using real DeepSeek calls through the gateway.
+
+```powershell
+.venv\Scripts\activate
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline-YYYYMMDDHHMMSS --profile baseline
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --profile candidate
+python -m eval compare --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --against baseline-YYYYMMDDHHMMSS --export-markdown docs\reports\agent-release-quality.md --no-fail-on-gate
+```
+
+The checked-in report shows a realistic tradeoff: the candidate is cheaper and faster, but the release gate fails because judge scoring detects a quality regression.
+
 ## Mock upstream flow
 
 Use this when you want a no-cost local-only test. The mock server emulates an OpenAI-compatible upstream.

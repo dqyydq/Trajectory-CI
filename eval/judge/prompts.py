@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-GENERAL_PROMPT = """You are evaluating an LLM agent trajectory. Return JSON with keys score and reason. Score from 1 to 5.
+GENERAL_PROMPT = """You are evaluating an LLM agent trajectory. Return only valid JSON with keys score and reason. Do not use Markdown. Score from 1 to 5.
 
 Task description:
 {description}
@@ -12,7 +12,7 @@ Final response / trajectory summary:
 {trajectory_text}
 """
 
-RUBRIC_PROMPT = """You are evaluating an LLM agent trajectory using the provided rubric. Return JSON with keys score and reason. Score from 1 to 5.
+RUBRIC_PROMPT = """You are evaluating an LLM agent trajectory using the provided rubric. Return only valid JSON with keys score and reason. Do not use Markdown. Score from 1 to 5.
 
 Task description:
 {description}

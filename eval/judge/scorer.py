@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 import os
+import re
+from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 import httpx
 from openai import OpenAI
 
 from eval.judge.prompts import build_judge_prompt
 from eval.schemas import EvalTask, JudgeResult
+
+load_dotenv(Path(".env"), encoding="utf-8-sig")
 
 
 def trajectory_text(trajectory: Any) -> str:
@@ -46,7 +51,8 @@ class JudgeScorer:
         )
         content = response.choices[0].message.content or "{}"
         try:
-            parsed = json.loads(content)
+            match = re.search(r"\{[\s\S]*\}", content)
+            parsed = json.loads(match.group(0) if match else content)
             return JudgeResult(score=float(parsed["score"]), reason=str(parsed["reason"]))
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"Judge returned invalid JSON: {content}") from exc

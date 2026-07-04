@@ -29,6 +29,28 @@ General LLM observability tools are good at showing individual calls. Trajectory
 ## Architecture
 
 Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL. `python -m eval compare` turns those traces into regression reports with gate verdicts. The React dashboard presents the latest gate status first, then lets you drill into calls, traces, cost, and eval task diffs.
+
+## Case Study: Cheaper Prompt, Failed Gate
+
+A real DeepSeek-backed evaluation in this repo compares two prompt profiles for the same agent tasks:
+
+- `baseline`: concise but complete engineering answers with caveats and tradeoffs.
+- `candidate`: aggressively shorter answers intended to reduce token usage and latency.
+
+The candidate looked attractive on infrastructure metrics:
+
+- Cost dropped from `$0.000579` to `$0.000188` (`-67.5%`).
+- Average latency dropped from `10445ms` to `3646ms` (`-65.1%`).
+
+But the regression gate still failed because the candidate omitted important debugging evidence in `failed_agent_investigation`:
+
+```text
+REGRESSION GATE: FAILED
+- regressed tasks 1 exceeded allowed 0
+```
+
+Read the generated report at [`docs/reports/agent-release-quality.md`](docs/reports/agent-release-quality.md). This is the core reason Trajectory CI treats cost and trace data as release evidence, not as standalone dashboard trivia.
+
 ## Local setup
 
 ```powershell
@@ -182,7 +204,7 @@ Run a baseline and candidate through your agent, then compare:
 
 ```powershell
 .venv\Scripts\activate
-python -m eval compare --task-set agent_ci_demo --run-id candidate --against baseline
+python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline
 ```
 
 The compare command prints a CI-style verdict and exits non-zero when the gate fails. Use `--no-fail-on-gate` if you want to inspect a failed report locally without failing the shell step.
@@ -196,7 +218,7 @@ Report: ...
 Export a markdown report:
 
 ```powershell
-python -m eval compare --task-set agent_ci_demo --run-id candidate --against baseline --export-markdown report.md
+python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline --export-markdown report.md
 ```
 
 The React dashboard shows the latest Regression Gate first. Calls, Cost, and Trace views are investigation tools for explaining that red/green result.
