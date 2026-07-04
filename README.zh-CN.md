@@ -262,16 +262,4 @@ npm run build
 python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline --export-markdown report.md
 ```
 
-## 当前定位
 
-Trajectory CI 当前最适合：
-
-- 个人项目展示
-- Agent 开发迭代
-- Prompt / model / tool 改动的回归测试
-- 本地优先的 release review
-- 面试中展示“我不是只会做 trace，我能把 observability 变成发版决策”
-
-它的核心不是“我记录了多少数据”，而是：
-
-> 我能告诉你这次 Agent 改动能不能发版，并解释原因。
