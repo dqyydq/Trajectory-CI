@@ -638,6 +638,27 @@ code { color: var(--cyan); }
   overflow-wrap: anywhere;
 }
 
+
+.context-panel,
+.gateway-context {
+  margin-top: 22px;
+  border: 1px solid rgba(103, 232, 249, .22);
+  border-radius: 8px;
+  padding: 18px 20px;
+  background: rgba(103, 232, 249, .055);
+}
+
+.context-panel p,
+.gateway-context p {
+  max-width: 920px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.gateway-context { margin-top: 0; }
+
 .workflow-panel {
   display: grid;
   grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);

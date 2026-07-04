@@ -49,236 +49,256 @@ const emptySummary: Summary = {
 };
 
 const translations = {
-  en: {
-    agentReleaseReview: "Agent release review",
-    timeWindow: "Time window",
-    tenant: "Tenant",
-    allTenants: "all tenants",
-    model: "Model",
-    allModels: "all models",
-    callStatus: "Call status",
-    allStatuses: "all statuses",
-    traceId: "Trace id",
-    traceUuid: "trace uuid",
-    sessionId: "Session id",
-    session: "session",
-    refreshData: "Refresh data",
-    eyebrow: "Agent regression CI",
-    headline: "Review an agent change like a release, not a metrics hunt.",
-    intro: "Run a baseline, run a candidate, compare them, and use the gate result as the top-level shipping decision. Cost, latency, and traces explain the verdict.",
-    currentReport: "Current report",
-    noReportsYet: "no reports yet",
-    reportHelp: "Default view shows the latest comparison. Older reports stay selectable for review.",
-    releaseDecision: "Release decision",
-    lookFirst: "What to look at first",
-    noBlockingRegression: "No blocking task regression is selected. Use the workflow below if this screen has no comparison yet.",
-    regressed: "Regressed",
-    candidateFailed: "Candidate failed",
-    notRun: "Not run",
-    costImpact: "Cost impact",
-    latencyImpact: "Latency impact",
-    startHere: "Start here",
-    workflowTitle: "Use it in three terminal commands.",
-    workflowBody: "The dashboard does not run your agent for you. It watches calls that your agent sends through the gateway, then turns a baseline-vs-candidate comparison into a release verdict.",
-    copied: "Copied",
-    copyCommand: "Copy command",
-    copyFailed: "Copy failed in this browser. Select the command text manually.",
-    tabs: { tasks: "Tasks", trace: "Traces", gateway: "Gateway Activity" },
-    taskEvidence: "Task-level release evidence",
-    table: {
-      task: "Task",
-      baseline: "Baseline",
-      candidate: "Candidate",
-      score: "Score",
-      decisionReason: "Decision reason",
-      traceLinks: "Trace links",
-      status: "Status",
-      tenant: "Tenant",
-      trace: "Trace",
-      latency: "Latency",
-      cost: "Cost",
-      started: "Started",
+  "en": {
+    "agentReleaseReview": "Agent release review",
+    "timeWindow": "Time window",
+    "tenant": "Tenant",
+    "allTenants": "all tenants",
+    "model": "Model",
+    "allModels": "all models",
+    "callStatus": "Call status",
+    "allStatuses": "all statuses",
+    "traceId": "Trace id",
+    "traceUuid": "trace uuid",
+    "sessionId": "Session id",
+    "session": "session",
+    "refreshData": "Refresh data",
+    "eyebrow": "Agent regression CI",
+    "headline": "Know whether an agent change is safe to ship.",
+    "intro": "Capture a baseline, capture a candidate, compare them, and read the release gate first. Cost, latency, and traces are evidence for the verdict.",
+    "currentReport": "Current report",
+    "noReportsYet": "no reports yet",
+    "reportHelp": "Default view shows the latest comparison. Older reports stay selectable for review.",
+    "releaseDecision": "Release decision",
+    "lookFirst": "What to look at first",
+    "noBlockingRegression": "No blocking task regression is selected. If this screen has no comparison yet, start with the workflow below.",
+    "regressed": "Regressed",
+    "candidateFailed": "Candidate failed",
+    "notRun": "Not run",
+    "costImpact": "Cost impact",
+    "latencyImpact": "Latency impact",
+    "startHere": "Start here",
+    "workflowTitle": "Run one release review in five steps.",
+    "workflowBody": "The dashboard does not run your agent. Your agent sends calls through the gateway; Trajectory CI turns the baseline-vs-candidate evidence into a release verdict.",
+    "lookingTitle": "What you are looking at",
+    "lookingBody": "This is a candidate-vs-baseline release review. Read the gate first, inspect regressed tasks second, and use raw traces only when you need proof.",
+    "rawEvidenceTitle": "Raw evidence, not the main workflow",
+    "rawEvidenceBody": "Gateway Activity shows operational evidence collected while your agent ran. Use it to explain a release decision; do not start here unless you are debugging capture or provider behavior.",
+    "copied": "Copied",
+    "copyCommand": "Copy command",
+    "copyFailed": "Copy failed in this browser. Select the command text manually.",
+    "tabs": {
+      "tasks": "Tasks",
+      "trace": "Traces",
+      "gateway": "Gateway Activity"
     },
-    noReleaseReport: "No release report yet. Copy the three commands above to create the first comparison.",
-    candidateRegressed: "Candidate regressed",
-    noRegressionDetected: "No regression detected",
-    traceInspection: "Trace inspection",
-    noSpansForTrace: "No spans found for this trace.",
-    traceEmpty: "Select a task trace or paste a trace id in the sidebar. Traces are evidence for explaining a release verdict, not the first place to start.",
-    request: "Request",
-    response: "Response",
-    open: "open",
-    stream: "stream",
-    sync: "sync",
-    unknown: "unknown",
-    gatewayHealth: "Gateway health",
-    rawCalls: "Raw calls",
-    observedCost: "Observed cost",
-    p95Latency: "p95 latency",
-    nominal: "Nominal",
-    watch: "Watch",
-    errorRate: "error rate",
-    traces: "traces",
-    tokens: "tokens",
-    avg: "avg",
-    costLatencyEvidence: "Cost and latency evidence",
-    runtimeAlerts: "Runtime alerts",
-    noAlerts: "No dynamic alert conditions in this window.",
-    rawCallLedger: "Raw call ledger",
-    modelEconomics: "Model economics",
-    commands: {
-      baselineLabel: "1. Capture baseline",
-      baselineDescription: "Run the current agent version and tag its calls as the baseline.",
-      candidateLabel: "2. Capture candidate",
-      candidateDescription: "Run the changed agent version with the same task set.",
-      compareLabel: "3. Compare and gate",
-      compareDescription: "Generate the release report that drives this screen.",
+    "taskEvidence": "Task-level release evidence",
+    "table": {
+      "task": "Task",
+      "baseline": "Baseline",
+      "candidate": "Candidate",
+      "score": "Score",
+      "decisionReason": "Decision reason",
+      "traceLinks": "Trace links",
+      "status": "Status",
+      "tenant": "Tenant",
+      "trace": "Trace",
+      "latency": "Latency",
+      "cost": "Cost",
+      "started": "Started"
     },
-    release: {
-      failed: {
-        label: "FAILED",
-        title: "Do not ship this candidate yet.",
-        detail: "The candidate broke at least one configured regression gate. Open the failed tasks first, then inspect traces only where evidence is missing.",
-      },
-      passed: {
-        label: "PASSED",
-        title: "This candidate passed the release gate.",
-        detail: "Quality, task completion, cost, and latency stayed inside the configured limits for this comparison.",
-      },
-      noGate: {
-        label: "NO GATE CONFIGURED",
-        title: "This report is informational only.",
-        detail: "produced a comparison, but it did not record configured gate rules. Add a gate block before treating this as a release decision.",
-      },
-      awaitingCandidate: {
-        label: "AWAITING CANDIDATE",
-        title: "The gateway has data, but no release comparison exists yet.",
-        detail: "Run a candidate with the same task set, then run compare. Until then, raw calls are only evidence, not a release verdict.",
-      },
-      noReport: {
-        label: "NO REPORT",
-        title: "Start with a baseline and candidate run.",
-        detail: "Trajectory CI becomes useful after it can compare two agent versions. Copy the commands below and run them from the project root.",
-      },
+    "noReleaseReport": "No release report yet. Copy the workflow commands above to create the first comparison.",
+    "candidateRegressed": "Candidate regressed",
+    "noRegressionDetected": "No regression detected",
+    "traceInspection": "Trace inspection",
+    "noSpansForTrace": "No spans found for this trace.",
+    "traceEmpty": "Select a task trace or paste a trace id in the sidebar. Traces are evidence for explaining a release verdict, not the first place to start.",
+    "request": "Request",
+    "response": "Response",
+    "open": "open",
+    "stream": "stream",
+    "sync": "sync",
+    "unknown": "unknown",
+    "gatewayHealth": "Gateway health",
+    "rawCalls": "Raw calls",
+    "observedCost": "Observed cost",
+    "p95Latency": "p95 latency",
+    "nominal": "Nominal",
+    "watch": "Watch",
+    "errorRate": "error rate",
+    "traces": "traces",
+    "tokens": "tokens",
+    "avg": "avg",
+    "costLatencyEvidence": "Cost and latency evidence",
+    "runtimeAlerts": "Runtime alerts",
+    "noAlerts": "No dynamic alert conditions in this window.",
+    "rawCallLedger": "Raw call ledger",
+    "modelEconomics": "Model economics",
+    "commands": {
+      "startLabel": "1. Start services",
+      "startDescription": "Start Postgres, apply migrations, then run the FastAPI gateway and React dashboard.",
+      "baselineLabel": "2. Capture baseline",
+      "baselineDescription": "Run the current agent version and tag its calls as the baseline.",
+      "candidateLabel": "3. Capture candidate",
+      "candidateDescription": "Run the changed agent version with the same task set.",
+      "compareLabel": "4. Compare and gate",
+      "compareDescription": "Generate the release report that drives this screen.",
+      "openLabel": "5. Open dashboard",
+      "openDescription": "Read the release verdict first, then inspect task diffs and trace evidence."
     },
-  },
-  zh: {
-      "agentReleaseReview": "Agent 发版审查",
-      "timeWindow": "时间窗口",
-      "tenant": "租户",
-      "allTenants": "全部租户",
-      "model": "模型",
-      "allModels": "全部模型",
-      "callStatus": "调用状态",
-      "allStatuses": "全部状态",
-      "traceId": "Trace ID",
-      "traceUuid": "trace uuid",
-      "sessionId": "Session ID",
-      "session": "session",
-      "refreshData": "刷新数据",
-      "eyebrow": "Agent 回归测试 CI",
-      "headline": "像审查一次发版一样审查 Agent 改动。",
-      "intro": "先跑 baseline，再跑 candidate，然后对比结果。页面最先给出能不能发版的 gate 判定，成本、延迟和 trace 只用于解释原因。",
-      "currentReport": "当前报告",
-      "noReportsYet": "暂无报告",
-      "reportHelp": "默认展示最新对比结果。历史报告可以从这里切换查看。",
-      "releaseDecision": "发版判定",
-      "lookFirst": "优先看这里",
-      "noBlockingRegression": "当前没有选中的阻塞回归。如果还没有对比报告，请先按下面流程运行。",
-      "regressed": "回归任务",
-      "candidateFailed": "Candidate 失败",
-      "notRun": "未运行",
-      "costImpact": "成本变化",
-      "latencyImpact": "延迟变化",
-      "startHere": "从这里开始",
-      "workflowTitle": "三条命令跑完整流程。",
-      "workflowBody": "看板不会替你运行 agent。你的 agent 通过网关发起调用后，系统会采集数据，再把 baseline 和 candidate 的对比结果转成发版判定。",
-      "copied": "已复制",
-      "copyCommand": "复制命令",
-      "copyFailed": "当前浏览器复制失败，请手动选择命令文本。",
-      "tabs": {
-          "tasks": "任务结果",
-          "trace": "Trace 证据",
-          "gateway": "网关活动"
+    "release": {
+      "failed": {
+        "label": "FAILED",
+        "title": "Do not ship this candidate yet.",
+        "detail": "The candidate broke at least one configured regression gate. Open the failed tasks first, then inspect traces only where evidence is missing."
       },
-      "taskEvidence": "任务级发版证据",
-      "table": {
-          "task": "任务",
-          "baseline": "Baseline",
-          "candidate": "Candidate",
-          "score": "评分",
-          "decisionReason": "判定原因",
-          "traceLinks": "Trace 链接",
-          "status": "状态",
-          "tenant": "租户",
-          "trace": "Trace",
-          "latency": "延迟",
-          "cost": "成本",
-          "started": "开始时间"
+      "passed": {
+        "label": "PASSED",
+        "title": "This candidate passed the release gate.",
+        "detail": "Quality, task completion, cost, and latency stayed inside the configured limits for this comparison."
       },
-      "noReleaseReport": "还没有发版对比报告。复制上面的三条命令创建第一次对比。",
-      "candidateRegressed": "Candidate 发生回归",
-      "noRegressionDetected": "未发现回归",
-      "traceInspection": "Trace 检查",
-      "noSpansForTrace": "这个 trace 下没有找到 span。",
-      "traceEmpty": "选择某个任务 trace，或在左侧粘贴 trace id。Trace 是解释发版判定的证据，不是新手第一入口。",
-      "request": "请求",
-      "response": "响应",
-      "open": "进行中",
-      "stream": "流式",
-      "sync": "同步",
-      "unknown": "未知",
-      "gatewayHealth": "网关健康",
-      "rawCalls": "原始调用",
-      "observedCost": "观测成本",
-      "p95Latency": "p95 延迟",
-      "nominal": "正常",
-      "watch": "需关注",
-      "errorRate": "错误率",
-      "traces": "traces",
-      "tokens": "tokens",
-      "avg": "平均",
-      "costLatencyEvidence": "成本与延迟证据",
-      "runtimeAlerts": "运行时告警",
-      "noAlerts": "当前时间窗口没有动态告警。",
-      "rawCallLedger": "原始调用记录",
-      "modelEconomics": "模型成本分析",
-      "commands": {
-          "baselineLabel": "1. 采集 baseline",
-          "baselineDescription": "运行当前版本 agent，并把调用标记为 baseline。",
-          "candidateLabel": "2. 采集 candidate",
-          "candidateDescription": "用同一组任务运行改动后的 agent。",
-          "compareLabel": "3. 对比并执行 gate",
-          "compareDescription": "生成驱动这个页面的发版审查报告。"
+      "noGate": {
+        "label": "NO GATE CONFIGURED",
+        "title": "This report is informational only.",
+        "detail": "produced a comparison, but it did not record configured gate rules. Add a gate block before treating this as a release decision."
       },
-      "release": {
-          "failed": {
-              "label": "不建议发版",
-              "title": "这个 candidate 现在不应该上线。",
-              "detail": "它触发了至少一条回归 gate。先看失败任务，再在证据不足时进入 trace。"
-          },
-          "passed": {
-              "label": "可以发版",
-              "title": "这个 candidate 通过了发版 gate。",
-              "detail": "质量、任务完成情况、成本和延迟都在当前配置的阈值内。"
-          },
-          "noGate": {
-              "label": "未配置 GATE",
-              "title": "这份报告只能作为参考。",
-              "detail": "生成了对比结果，但没有记录 gate 规则。请先在 task set 里加 gate 配置，再把它当作发版判定。"
-          },
-          "awaitingCandidate": {
-              "label": "等待 Candidate",
-              "title": "网关已有数据，但还没有发版对比报告。",
-              "detail": "继续运行 candidate，再执行 compare。在此之前，原始调用只能算证据，不能算发版结论。"
-          },
-          "noReport": {
-              "label": "暂无报告",
-              "title": "先运行 baseline 和 candidate。",
-              "detail": "Trajectory CI 只有在比较两个 agent 版本后才真正有价值。复制下面命令，在项目根目录执行。"
-          }
+      "awaitingCandidate": {
+        "label": "AWAITING CANDIDATE",
+        "title": "The gateway has data, but no release comparison exists yet.",
+        "detail": "Run a candidate with the same task set, then run compare. Until then, raw calls are only evidence, not a release verdict."
+      },
+      "noReport": {
+        "label": "NO REPORT",
+        "title": "Start with a baseline and candidate run.",
+        "detail": "Trajectory CI becomes useful after it can compare two agent versions. Copy the commands below and run them from the project root."
       }
+    }
   },
+  "zh": {
+    "agentReleaseReview": "Agent \u53d1\u7248\u5ba1\u67e5",
+    "timeWindow": "\u65f6\u95f4\u7a97\u53e3",
+    "tenant": "\u79df\u6237",
+    "allTenants": "\u5168\u90e8\u79df\u6237",
+    "model": "\u6a21\u578b",
+    "allModels": "\u5168\u90e8\u6a21\u578b",
+    "callStatus": "\u8c03\u7528\u72b6\u6001",
+    "allStatuses": "\u5168\u90e8\u72b6\u6001",
+    "traceId": "Trace ID",
+    "traceUuid": "trace uuid",
+    "sessionId": "Session ID",
+    "session": "session",
+    "refreshData": "\u5237\u65b0\u6570\u636e",
+    "eyebrow": "Agent \u56de\u5f52\u6d4b\u8bd5 CI",
+    "headline": "\u5224\u65ad\u4e00\u6b21 Agent \u6539\u52a8\u80fd\u4e0d\u80fd\u53d1\u7248\u3002",
+    "intro": "\u5148\u91c7\u96c6 baseline\uff0c\u518d\u91c7\u96c6 candidate\uff0c\u7136\u540e\u5bf9\u6bd4\u4e24\u6b21\u7ed3\u679c\u3002\u9875\u9762\u6700\u5148\u5c55\u793a\u53d1\u7248 gate\uff0c\u6210\u672c\u3001\u5ef6\u8fdf\u548c trace \u53ea\u662f\u89e3\u91ca\u8fd9\u4e2a\u7ed3\u8bba\u7684\u8bc1\u636e\u3002",
+    "currentReport": "\u5f53\u524d\u62a5\u544a",
+    "noReportsYet": "\u6682\u65e0\u62a5\u544a",
+    "reportHelp": "\u9ed8\u8ba4\u5c55\u793a\u6700\u65b0\u5bf9\u6bd4\u7ed3\u679c\u3002\u5386\u53f2\u62a5\u544a\u53ef\u4ee5\u4ece\u8fd9\u91cc\u5207\u6362\u67e5\u770b\u3002",
+    "releaseDecision": "\u53d1\u7248\u5224\u5b9a",
+    "lookFirst": "\u4f18\u5148\u770b\u8fd9\u91cc",
+    "noBlockingRegression": "\u5f53\u524d\u6ca1\u6709\u9009\u4e2d\u7684\u963b\u585e\u56de\u5f52\u3002\u5982\u679c\u8fd8\u6ca1\u6709\u5bf9\u6bd4\u62a5\u544a\uff0c\u8bf7\u5148\u6309\u4e0b\u9762\u6d41\u7a0b\u8fd0\u884c\u3002",
+    "regressed": "\u56de\u5f52\u4efb\u52a1",
+    "candidateFailed": "Candidate \u5931\u8d25",
+    "notRun": "\u672a\u8fd0\u884c",
+    "costImpact": "\u6210\u672c\u53d8\u5316",
+    "latencyImpact": "\u5ef6\u8fdf\u53d8\u5316",
+    "startHere": "\u4ece\u8fd9\u91cc\u5f00\u59cb",
+    "workflowTitle": "\u4e94\u6b65\u5b8c\u6210\u4e00\u6b21\u53d1\u7248\u5ba1\u67e5\u3002",
+    "workflowBody": "\u770b\u677f\u4e0d\u4f1a\u66ff\u4f60\u8fd0\u884c agent\u3002\u4f60\u7684 agent \u901a\u8fc7\u7f51\u5173\u53d1\u8d77\u8c03\u7528\uff0cTrajectory CI \u628a baseline \u548c candidate \u7684\u8bc1\u636e\u8f6c\u6210\u53d1\u7248\u7ed3\u8bba\u3002",
+    "lookingTitle": "\u4f60\u6b63\u5728\u770b\u4ec0\u4e48",
+    "lookingBody": "\u8fd9\u662f\u4e00\u6b21 candidate-vs-baseline \u53d1\u7248\u5ba1\u67e5\u3002\u5148\u770b gate\uff0c\u518d\u770b\u56de\u5f52\u4efb\u52a1\uff0c\u53ea\u6709\u9700\u8981\u8bc1\u636e\u65f6\u624d\u8fdb\u5165\u539f\u59cb trace\u3002",
+    "rawEvidenceTitle": "\u539f\u59cb\u8bc1\u636e\uff0c\u4e0d\u662f\u4e3b\u6d41\u7a0b",
+    "rawEvidenceBody": "Gateway Activity \u5c55\u793a agent \u8fd0\u884c\u65f6\u91c7\u96c6\u5230\u7684\u64cd\u4f5c\u8bc1\u636e\u3002\u7528\u5b83\u89e3\u91ca\u53d1\u7248\u5224\u5b9a\uff0c\u4e0d\u8981\u628a\u5b83\u5f53\u6210\u7b2c\u4e00\u5165\u53e3\u3002",
+    "copied": "\u5df2\u590d\u5236",
+    "copyCommand": "\u590d\u5236\u547d\u4ee4",
+    "copyFailed": "\u5f53\u524d\u6d4f\u89c8\u5668\u590d\u5236\u5931\u8d25\uff0c\u8bf7\u624b\u52a8\u9009\u62e9\u547d\u4ee4\u6587\u672c\u3002",
+    "tabs": {
+      "tasks": "\u4efb\u52a1\u7ed3\u679c",
+      "trace": "Trace \u8bc1\u636e",
+      "gateway": "\u7f51\u5173\u6d3b\u52a8"
+    },
+    "taskEvidence": "\u4efb\u52a1\u7ea7\u53d1\u7248\u8bc1\u636e",
+    "table": {
+      "task": "\u4efb\u52a1",
+      "baseline": "Baseline",
+      "candidate": "Candidate",
+      "score": "\u8bc4\u5206",
+      "decisionReason": "\u5224\u5b9a\u539f\u56e0",
+      "traceLinks": "Trace \u94fe\u63a5",
+      "status": "\u72b6\u6001",
+      "tenant": "\u79df\u6237",
+      "trace": "Trace",
+      "latency": "\u5ef6\u8fdf",
+      "cost": "\u6210\u672c",
+      "started": "\u5f00\u59cb\u65f6\u95f4"
+    },
+    "noReleaseReport": "\u8fd8\u6ca1\u6709\u53d1\u7248\u5bf9\u6bd4\u62a5\u544a\u3002\u590d\u5236\u4e0a\u9762\u7684\u6d41\u7a0b\u547d\u4ee4\u521b\u5efa\u7b2c\u4e00\u6b21\u5bf9\u6bd4\u3002",
+    "candidateRegressed": "Candidate \u53d1\u751f\u56de\u5f52",
+    "noRegressionDetected": "\u672a\u53d1\u73b0\u56de\u5f52",
+    "traceInspection": "Trace \u68c0\u67e5",
+    "noSpansForTrace": "\u8fd9\u4e2a trace \u4e0b\u6ca1\u6709\u627e\u5230 span\u3002",
+    "traceEmpty": "\u9009\u62e9\u67d0\u4e2a\u4efb\u52a1 trace\uff0c\u6216\u5728\u5de6\u4fa7\u7c98\u8d34 trace id\u3002Trace \u662f\u89e3\u91ca\u53d1\u7248\u5224\u5b9a\u7684\u8bc1\u636e\uff0c\u4e0d\u662f\u65b0\u624b\u7b2c\u4e00\u5165\u53e3\u3002",
+    "request": "\u8bf7\u6c42",
+    "response": "\u54cd\u5e94",
+    "open": "\u8fdb\u884c\u4e2d",
+    "stream": "\u6d41\u5f0f",
+    "sync": "\u540c\u6b65",
+    "unknown": "\u672a\u77e5",
+    "gatewayHealth": "\u7f51\u5173\u5065\u5eb7",
+    "rawCalls": "\u539f\u59cb\u8c03\u7528",
+    "observedCost": "\u89c2\u6d4b\u6210\u672c",
+    "p95Latency": "p95 \u5ef6\u8fdf",
+    "nominal": "\u6b63\u5e38",
+    "watch": "\u9700\u5173\u6ce8",
+    "errorRate": "\u9519\u8bef\u7387",
+    "traces": "traces",
+    "tokens": "tokens",
+    "avg": "\u5e73\u5747",
+    "costLatencyEvidence": "\u6210\u672c\u4e0e\u5ef6\u8fdf\u8bc1\u636e",
+    "runtimeAlerts": "\u8fd0\u884c\u65f6\u544a\u8b66",
+    "noAlerts": "\u5f53\u524d\u65f6\u95f4\u7a97\u53e3\u6ca1\u6709\u52a8\u6001\u544a\u8b66\u3002",
+    "rawCallLedger": "\u539f\u59cb\u8c03\u7528\u8bb0\u5f55",
+    "modelEconomics": "\u6a21\u578b\u6210\u672c\u5206\u6790",
+    "commands": {
+      "startLabel": "1. \u542f\u52a8\u670d\u52a1",
+      "startDescription": "\u542f\u52a8 Postgres\uff0c\u6267\u884c\u8fc1\u79fb\uff0c\u7136\u540e\u542f\u52a8 FastAPI \u7f51\u5173\u548c React \u770b\u677f\u3002",
+      "baselineLabel": "2. \u91c7\u96c6 baseline",
+      "baselineDescription": "\u8fd0\u884c\u5f53\u524d\u7248\u672c agent\uff0c\u5e76\u628a\u8c03\u7528\u6807\u8bb0\u4e3a baseline\u3002",
+      "candidateLabel": "3. \u91c7\u96c6 candidate",
+      "candidateDescription": "\u7528\u540c\u4e00\u7ec4\u4efb\u52a1\u8fd0\u884c\u6539\u52a8\u540e\u7684 agent\u3002",
+      "compareLabel": "4. \u5bf9\u6bd4\u5e76\u6267\u884c gate",
+      "compareDescription": "\u751f\u6210\u9a71\u52a8\u8fd9\u4e2a\u9875\u9762\u7684\u53d1\u7248\u5ba1\u67e5\u62a5\u544a\u3002",
+      "openLabel": "5. \u6253\u5f00\u770b\u677f",
+      "openDescription": "\u5148\u770b\u53d1\u7248\u5224\u5b9a\uff0c\u518d\u770b\u4efb\u52a1 diff \u548c trace \u8bc1\u636e\u3002"
+    },
+    "release": {
+      "failed": {
+        "label": "\u4e0d\u5efa\u8bae\u53d1\u7248",
+        "title": "\u8fd9\u4e2a candidate \u73b0\u5728\u4e0d\u5e94\u8be5\u4e0a\u7ebf\u3002",
+        "detail": "\u5b83\u89e6\u53d1\u4e86\u81f3\u5c11\u4e00\u6761\u56de\u5f52 gate\u3002\u5148\u770b\u5931\u8d25\u4efb\u52a1\uff0c\u518d\u5728\u8bc1\u636e\u4e0d\u8db3\u65f6\u8fdb\u5165 trace\u3002"
+      },
+      "passed": {
+        "label": "\u53ef\u4ee5\u53d1\u7248",
+        "title": "\u8fd9\u4e2a candidate \u901a\u8fc7\u4e86\u53d1\u7248 gate\u3002",
+        "detail": "\u8d28\u91cf\u3001\u4efb\u52a1\u5b8c\u6210\u60c5\u51b5\u3001\u6210\u672c\u548c\u5ef6\u8fdf\u90fd\u5728\u5f53\u524d\u914d\u7f6e\u7684\u9608\u503c\u5185\u3002"
+      },
+      "noGate": {
+        "label": "\u672a\u914d\u7f6e GATE",
+        "title": "\u8fd9\u4efd\u62a5\u544a\u53ea\u80fd\u4f5c\u4e3a\u53c2\u8003\u3002",
+        "detail": "\u751f\u6210\u4e86\u5bf9\u6bd4\u7ed3\u679c\uff0c\u4f46\u6ca1\u6709\u8bb0\u5f55 gate \u89c4\u5219\u3002\u8bf7\u5148\u5728 task set \u91cc\u52a0 gate \u914d\u7f6e\uff0c\u518d\u628a\u5b83\u5f53\u4f5c\u53d1\u7248\u5224\u5b9a\u3002"
+      },
+      "awaitingCandidate": {
+        "label": "\u7b49\u5f85 Candidate",
+        "title": "\u7f51\u5173\u5df2\u6709\u6570\u636e\uff0c\u4f46\u8fd8\u6ca1\u6709\u53d1\u7248\u5bf9\u6bd4\u62a5\u544a\u3002",
+        "detail": "\u7ee7\u7eed\u8fd0\u884c candidate\uff0c\u518d\u6267\u884c compare\u3002\u5728\u6b64\u4e4b\u524d\uff0c\u539f\u59cb\u8c03\u7528\u53ea\u80fd\u7b97\u8bc1\u636e\uff0c\u4e0d\u80fd\u7b97\u53d1\u7248\u7ed3\u8bba\u3002"
+      },
+      "noReport": {
+        "label": "\u6682\u65e0\u62a5\u544a",
+        "title": "\u5148\u8fd0\u884c baseline \u548c candidate\u3002",
+        "detail": "Trajectory CI \u53ea\u6709\u5728\u6bd4\u8f83\u4e24\u4e2a agent \u7248\u672c\u540e\u624d\u771f\u6b63\u6709\u4ef7\u503c\u3002\u590d\u5236\u4e0b\u9762\u547d\u4ee4\uff0c\u5728\u9879\u76ee\u6839\u76ee\u5f55\u6267\u884c\u3002"
+      }
+    }
+  }
 };
 
 type Language = keyof typeof translations;
@@ -293,16 +313,22 @@ function initialLanguage(): Language {
 function commandList(text: Copy) {
   return [
     {
+      id: "start",
+      label: text.commands.startLabel,
+      description: text.commands.startDescription,
+      command: String.raw`.venv\Scripts\activate; docker compose up -d; alembic upgrade head; uvicorn app.main:app --reload --port 8000`,
+    },
+    {
       id: "baseline",
       label: text.commands.baselineLabel,
       description: text.commands.baselineDescription,
-      command: "python example\\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline --profile baseline",
+      command: String.raw`python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline --profile baseline`,
     },
     {
       id: "candidate",
       label: text.commands.candidateLabel,
       description: text.commands.candidateDescription,
-      command: "python example\\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate --profile candidate",
+      command: String.raw`python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate --profile candidate`,
     },
     {
       id: "compare",
@@ -310,9 +336,14 @@ function commandList(text: Copy) {
       description: text.commands.compareDescription,
       command: "python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline",
     },
+    {
+      id: "open",
+      label: text.commands.openLabel,
+      description: text.commands.openDescription,
+      command: "http://127.0.0.1:5173/dashboard/",
+    },
   ];
 }
-
 const fmtMoney = (value?: number | null) => `$${Number(value ?? 0).toFixed(4)}`;
 const fmtMs = (value?: number | null) => `${Math.round(Number(value ?? 0)).toLocaleString()}ms`;
 const fmtNum = (value?: number | null) => Math.round(Number(value ?? 0)).toLocaleString();
@@ -668,6 +699,11 @@ function App() {
           </div>
         </section>
 
+        <section className="context-panel">
+          <span className="eyebrow">{text.lookingTitle}</span>
+          <p>{text.lookingBody}</p>
+        </section>
+
         <section className="workflow-panel">
           <div className="workflow-copy">
             <span className="eyebrow">{text.startHere}</span>
@@ -733,6 +769,10 @@ function App() {
 
         {activeTab === "gateway" ? (
           <section className="gateway-panel">
+            <section className="gateway-context">
+              <span className="eyebrow">{text.rawEvidenceTitle}</span>
+              <p>{text.rawEvidenceBody}</p>
+            </section>
             <section className="metric-grid">
               <MetricCard label={text.gatewayHealth} value={errorRate > 0.2 ? text.watch : text.nominal} detail={`${pct(errorRate)} ${text.errorRate}`} tone={errorRate > 0.2 ? "tone-danger" : "tone-good"} />
               <MetricCard label={text.rawCalls} value={fmtNum(summary.call_count)} detail={`${fmtNum(summary.trace_count)} ${text.traces}`} />

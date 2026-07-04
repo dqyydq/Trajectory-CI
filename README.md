@@ -1,6 +1,10 @@
 # Trajectory CI
 
-Trajectory CI is a local regression testing platform for AI Agent systems. Run a baseline and a candidate version of your agent, compare their task trajectories, and get a clear release verdict:
+Trajectory CI is an Agent Regression CI tool. It helps AI agent developers answer one release question:
+
+> I changed a prompt, model, tool, or system instruction. Is this candidate safer to ship than the baseline?
+
+Run your current agent as a **baseline**, run the changed agent as a **candidate**, then compare the two runs. The result is a CI-style release gate:
 
 ```text
 REGRESSION GATE: PASSED
@@ -10,43 +14,79 @@ or:
 
 ```text
 REGRESSION GATE: FAILED
-- regressed tasks 2 exceeded allowed 0
-- cost increase 31.4 exceeded allowed 15
+- regressed tasks 1 exceeded allowed 0
 ```
 
-The gateway, traces, cost, latency, and dashboard are supporting infrastructure for that CI decision. They answer why a candidate failed the gate: which task regressed, which trace changed, whether a task did not run, and whether a cheaper/faster change made quality unacceptable.
+Traces, cost, latency, judge reasons, and the dashboard are not the product by themselves. They are release evidence: they explain why a candidate passed or failed.
 
+## Quickstart: Review One Agent Change
 
-## Use It In Three Commands
+Prerequisites: Docker Desktop is running, `.env` contains your provider key, and dependencies are installed.
 
-After the local gateway is running, create a baseline run, create a candidate run, and compare them:
+1. Start the local services:
+
+```powershell
+.venv\Scripts\activate
+docker compose up -d
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
+
+2. In another terminal, start the dashboard:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+3. Run the current agent as the baseline:
 
 ```powershell
 .venv\Scripts\activate
 python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline --profile baseline
+```
+
+4. Run the changed agent as the candidate:
+
+```powershell
 python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate --profile candidate
+```
+
+5. Compare the two runs:
+
+```powershell
 python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline
 ```
 
-The output is a release decision: `REGRESSION GATE: PASSED` or `REGRESSION GATE: FAILED`. The dashboard shows that decision first; trace, cost, latency, and judge reasons explain it.
+Open the release review dashboard at `http://127.0.0.1:5173/dashboard/`.
+
+The first thing to read is the release decision. If it fails, the task table, judge reasons, cost/latency deltas, and trace links explain why.
+
+## What Problem This Solves
+
+Agent changes are hard to review manually. A shorter prompt can reduce cost but remove critical caveats. A model swap can improve latency but break tool usage. A tool change can pass a smoke test while regressing a specific workflow.
+
+Trajectory CI gives that review a repeatable shape:
+
+- Define a task set your agent must keep passing.
+- Capture a baseline run and a candidate run through the local gateway.
+- Compare task outcomes, judge scores, trace IDs, cost, and latency.
+- Apply a regression gate so the result is red or green.
+- Drill into traces only when you need evidence.
 
 ## Why Not Just Use A Trace Tool?
 
-General LLM observability tools are good at showing individual calls. Trajectory CI is built around release decisions for agent changes:
+| Tool type | Primary question | Typical output |
+| --- | --- | --- |
+| Langfuse / Helicone / Phoenix | What happened in this LLM call or trace? | Logs, traces, scores, dashboards |
+| Trajectory CI | Can this agent change ship? | Baseline-vs-candidate release gate with task diffs and evidence |
 
-- **Regression-first:** the primary output is pass/fail for a baseline-vs-candidate run, not a pile of charts.
-- **Trajectory diff:** each task stores both runs, judge reasons, hard-check failures, and trace IDs for drill-down.
-- **Cost as a gate:** cost and latency are treated as release criteria, not just accounting metrics.
-- **Zero-intrusion capture:** OpenAI-compatible and Anthropic clients only need a local `base_url` change.
-- **Local-first:** traces and raw bodies can stay in your own Postgres while developing or demoing.
-
-## Architecture
-
-Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL. `python -m eval compare` turns those traces into regression reports with gate verdicts. The React dashboard presents the latest gate status first, then lets you drill into calls, traces, cost, and eval task diffs.
+Trajectory CI is not trying to beat mature tracing products at tracing. It uses tracing as the data layer for regression review.
 
 ## Case Study: Cheaper Prompt, Failed Gate
 
-A real DeepSeek-backed evaluation in this repo compares two prompt profiles for the same agent tasks:
+The included DeepSeek-backed case compares two prompt profiles on the same agent tasks:
 
 - `baseline`: concise but complete engineering answers with caveats and tradeoffs.
 - `candidate`: aggressively shorter answers intended to reduce token usage and latency.
@@ -56,26 +96,85 @@ The candidate looked attractive on infrastructure metrics:
 - Cost dropped from `$0.000579` to `$0.000188` (`-67.5%`).
 - Average latency dropped from `10445ms` to `3646ms` (`-65.1%`).
 
-But the regression gate still failed because the candidate omitted important debugging evidence in `failed_agent_investigation`:
+But the release gate failed because the candidate omitted important debugging evidence in `failed_agent_investigation`:
 
 ```text
 REGRESSION GATE: FAILED
 - regressed tasks 1 exceeded allowed 0
 ```
 
-Read the generated report at [`docs/reports/agent-release-quality.md`](docs/reports/agent-release-quality.md). This is the core reason Trajectory CI treats cost and trace data as release evidence, not as standalone dashboard trivia.
+Read the generated report at [`docs/reports/agent-release-quality.md`](docs/reports/agent-release-quality.md).
 
-## Local setup
+## How It Works With Your Own Agent
 
-```powershell
-.venv\Scripts\activate
-uv pip install -e ".[dev]"
-docker compose up -d
-alembic upgrade head
-uvicorn app.main:app --reload --port 8000
+Your agent keeps using an OpenAI-compatible or Anthropic-compatible client. Point the client at the local gateway and tag each evaluation call.
+
+For OpenAI-compatible clients, change only the base URL and add evaluation headers:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="your-provider-key",
+    base_url="http://127.0.0.1:8000/v1",
+)
+
+response = client.chat.completions.create(
+    model="deepseek-v4-flash",
+    messages=[{"role": "user", "content": "Should we ship this candidate?"}],
+    extra_headers={
+        "X-Eval-Task-Id": "release_tradeoff",
+        "X-Eval-Run-Id": "candidate",
+        "X-Session-Id": "agent_release_quality:release_tradeoff:candidate",
+    },
+)
 ```
 
-Start the React dashboard in another terminal:
+The gateway forwards the request to the real provider, records the trace evidence, and keeps the provider credential out of the database.
+
+## Task Sets And Release Gates
+
+A task set defines what the agent must keep doing correctly and what counts as a failed release gate:
+
+```yaml
+gate:
+  max_regressed_tasks: 0
+  max_failed_tasks: 0
+  max_not_run_tasks: 0
+  max_cost_increase_pct: 15
+  max_latency_increase_pct: 20
+
+tasks:
+  - task_id: "agent_release_tradeoff"
+    description: "The agent should explain whether a cheaper candidate is safe to ship."
+    input: "A cheaper model reduces cost but lowers answer quality. Should we ship it?"
+    judge_rubric: "Reward answers that weigh quality, cost, latency, and regression risk."
+```
+
+Run a baseline and candidate through your agent, then compare:
+
+```powershell
+python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline
+```
+
+The compare command exits non-zero when the gate fails. Use `--no-fail-on-gate` when you want to inspect a failed report locally without failing the shell step.
+
+Export a markdown report:
+
+```powershell
+python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline --export-markdown report.md
+```
+
+## Dashboard
+
+The React dashboard is a release review surface, not a generic monitoring board.
+
+- **Release decision:** the top-level pass/fail result.
+- **Tasks:** task-level diffs, judge scores, reasons, and trace links.
+- **Traces:** raw request/response evidence for a selected trace.
+- **Gateway Activity:** raw operational evidence such as calls, cost, latency, alerts, and model breakdown.
+
+Start it with:
 
 ```powershell
 cd frontend
@@ -83,18 +182,11 @@ npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. The Vite dev server proxies `/api` requests to FastAPI on `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:5173/dashboard/`.
 
-The previous Streamlit dashboard is kept as a legacy fallback:
+## Provider Support
 
-```powershell
-.venv\Scripts\activate
-streamlit run dashboard\streamlit_app.py
-```
-
-## Use with an OpenAI-compatible client
-
-Set the client's base URL to `http://localhost:8000/v1` and keep using your real provider API key. The gateway forwards the upstream auth header and does not store the key.
+OpenAI-compatible route:
 
 ```bash
 curl http://localhost:8000/v1/chat/completions \
@@ -104,19 +196,7 @@ curl http://localhost:8000/v1/chat/completions \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hi"}]}'
 ```
 
-For streaming:
-
-```bash
-curl -N http://localhost:8000/v1/chat/completions \
-  -H "Authorization: Bearer $OPENAI_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "X-Session-Id: demo-session" \
-  -d '{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"Say hi"}]}'
-```
-
-## Anthropic Messages API
-
-The gateway proxies Anthropic Messages API calls at `POST /v1/messages`. The response shape stays Anthropic-native; the gateway only records trace, usage, latency, and cost metadata.
+Anthropic Messages API route:
 
 ```bash
 curl http://localhost:8000/v1/messages \
@@ -127,24 +207,25 @@ curl http://localhost:8000/v1/messages \
   -d '{"model":"claude-3-5-sonnet-latest","max_tokens":128,"messages":[{"role":"user","content":"Say hi"}]}'
 ```
 
-For streaming, send `"stream": true`; the gateway forwards Anthropic SSE chunks unchanged and records a best-effort aggregate response when the stream closes.
+Streaming is supported for both routes. Streaming chunks are forwarded unchanged, and the gateway records best-effort usage and response summaries when the stream closes.
 
-Run the interactive Anthropic tool-use example through the gateway:
+## Gateway Configuration
 
-```powershell
-.venv\Scripts\activate
-python example\anthropic_tool_agent_run.py "List the top-level files, then read README.md if it exists."
-```
+Environment variables are loaded from `.env`.
 
-The script loads `.env`, sends requests to `http://127.0.0.1:8000/v1/messages`, and tags spans with `X-Session-Id` / `X-Tenant-Id` so they appear in the dashboard. Set `ANTHROPIC_API_KEY` in `.env`; set `MODEL_ID` if you want a model other than the script default.
+- `DATABASE_URL`: async SQLAlchemy URL for the FastAPI service.
+- `DASHBOARD_DATABASE_URL`: sync PostgreSQL URL for dashboard queries.
+- `OPENAI_BASE_URL`: upstream OpenAI-compatible API base URL.
+- `ANTHROPIC_BASE_URL`: upstream Anthropic API base URL.
+- `PRICING_CONFIG_PATH`: YAML pricing file path.
+- `RECORD_REQUEST_BODY`, `RECORD_RESPONSE_BODY`, `MAX_BODY_BYTES`: request/response body storage guardrails.
+- `GATEWAY_API_KEYS`: optional comma-separated gateway API keys. Empty disables gateway auth.
+- `DEFAULT_TENANT_ID`: tenant label used when `X-Tenant-Id` is omitted.
+- `ALERTS_ENABLED`, `ALERT_*`: optional anomaly detection and webhook alert configuration.
 
-## Gateway auth, tenants, and alerts
-
-Gateway auth is optional and disabled by default. To enable it, set `GATEWAY_API_KEYS` to a comma-separated list and send `X-Gateway-Api-Key` on gateway requests. This is separate from upstream provider auth; `Authorization`, `x-api-key`, and provider version headers still pass through to the provider.
+Gateway auth is separate from provider auth. If `GATEWAY_API_KEYS` is configured, send `X-Gateway-Api-Key` to the gateway. Provider credentials such as `Authorization` or `x-api-key` are still forwarded upstream.
 
 Use `X-Tenant-Id` to label traces by caller. If omitted, traces use `DEFAULT_TENANT_ID`.
-
-Alerts are optional and disabled by default. When `ALERTS_ENABLED=true`, the gateway evaluates recent completed spans after each request and logs warnings for high error rate, high p95 latency, or model cost spikes. Set `ALERT_WEBHOOK_URL` to POST alert payloads to an external receiver.
 
 ## Dashboard API
 
@@ -159,9 +240,9 @@ The React dashboard reads JSON from FastAPI endpoints under `/api/dashboard/*`:
 - `/api/dashboard/alerts`
 - `/api/dashboard/eval-reports`
 
-These endpoints wrap the existing dashboard query layer and return JSON-safe records for the frontend.
+These endpoints support the release review UI; they are not the primary user-facing interface.
 
-## Test strategy
+## Test Strategy
 
 Fast tests that do not call external networks or real OpenAI:
 
@@ -186,66 +267,3 @@ Coverage focus:
 - Concurrency: concurrent `X-Session-Id` calls reuse one trace through the PostgreSQL partial unique index and upsert path.
 - Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic OpenAI `stream_options.include_usage`.
 - Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
-
-## Agent Regression CI
-
-A task set defines the tasks your agent must keep passing and the release gate a candidate run must satisfy:
-
-```yaml
-gate:
-  max_regressed_tasks: 0
-  max_failed_tasks: 0
-  max_not_run_tasks: 0
-  max_cost_increase_pct: 15
-  max_latency_increase_pct: 20
-
-tasks:
-  - task_id: "agent_release_tradeoff"
-    description: "The agent should explain whether a cheaper candidate is safe to ship."
-    input: "A cheaper model reduces cost but lowers answer quality. Should we ship it?"
-    checks:
-      - type: response_contains
-        keyword: "cost"
-```
-
-When running an agent for evaluation, tag each LLM call:
-
-- `X-Eval-Task-Id`: task id from the YAML task set.
-- `X-Eval-Run-Id`: run id, for example `baseline` or `candidate`.
-- `X-Session-Id`: optional; keep it unique per task/run, for example `{task_set}:{task_id}:{run_id}`.
-
-Run a baseline and candidate through your agent, then compare:
-
-```powershell
-.venv\Scripts\activate
-python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline
-```
-
-The compare command prints a CI-style verdict and exits non-zero when the gate fails. Use `--no-fail-on-gate` if you want to inspect a failed report locally without failing the shell step.
-
-```text
-REGRESSION GATE: FAILED
-- regressed tasks 1 exceeded allowed 0
-Report: ...
-```
-
-Export a markdown report:
-
-```powershell
-python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline --export-markdown report.md
-```
-
-The React dashboard shows the latest Regression Gate first. Calls, Cost, and Trace views are investigation tools for explaining that red/green result.
-## Configuration
-
-Environment variables are loaded from `.env`.
-
-- `DATABASE_URL`: async SQLAlchemy URL for the FastAPI service.
-- `DASHBOARD_DATABASE_URL`: sync PostgreSQL URL for dashboard queries, for example `postgresql+psycopg://postgres:postgres@localhost:5432/agent_observability`.
-- `OPENAI_BASE_URL`: upstream OpenAI-compatible API base URL.
-- `ANTHROPIC_BASE_URL`: upstream Anthropic API base URL.
-- `PRICING_CONFIG_PATH`: YAML pricing file path.
-- `RECORD_REQUEST_BODY`, `RECORD_RESPONSE_BODY`, `MAX_BODY_BYTES`: request/response body storage guardrails.
-- `GATEWAY_API_KEYS`: optional comma-separated gateway API keys. Empty disables gateway auth.
-- `DEFAULT_TENANT_ID`: tenant label used when `X-Tenant-Id` is omitted.
-- `ALERTS_ENABLED`, `ALERT_*`: optional anomaly detection and webhook alert configuration.

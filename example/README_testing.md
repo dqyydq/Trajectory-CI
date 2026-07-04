@@ -1,10 +1,10 @@
-# Example Flows
+# Example Release-Review Flows
 
-This directory contains runnable examples for validating the Agent Observability Gateway.
+These examples show how to use Trajectory CI as an agent release review tool: capture a baseline, capture a candidate, compare them, and inspect the release verdict.
 
-## Real DeepSeek API flow
+## Real DeepSeek Release Review
 
-Use this when you want to call your real DeepSeek API through the local gateway and generate Phase 2 eval data.
+This is the main product story and the best first demo. It uses real DeepSeek calls through the local gateway and the `agent_release_quality` task set.
 
 Prerequisites:
 
@@ -18,51 +18,43 @@ OPENAI_BASE_URL=https://api.deepseek.com
 PRICING_CONFIG_PATH=config/pricing.example.yaml
 ```
 
-Run two eval runs:
+Run the baseline:
+
+```powershell
+.venv\Scripts\activate
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline-YYYYMMDDHHMMSS --profile baseline
+```
+
+Run the candidate:
+
+```powershell
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --profile candidate
+```
+
+Compare the two runs:
+
+```powershell
+python -m eval compare --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --against baseline-YYYYMMDDHHMMSS --export-markdown docs\reports\agent-release-quality.md --no-fail-on-gate
+```
+
+Expected result: the command prints `REGRESSION GATE: PASSED` or `REGRESSION GATE: FAILED`, and the dashboard shows the same release decision first. The checked-in report demonstrates a realistic tradeoff: the candidate is cheaper and faster, but the release gate fails because judge scoring detects a quality regression.
+
+## Minimal DeepSeek Smoke Flow
+
+Use this when you only want to verify real provider connectivity and eval tagging.
 
 ```powershell
 .venv\Scripts\activate
 python example\deepseek_agent_run.py --run-id v1
 python example\deepseek_agent_run.py --run-id v2
-```
-
-Compare them without judge calls:
-
-```powershell
 python -m eval compare --task-set deepseek_smoke --run-id v2 --against v1 --skip-judge
 ```
 
-Compare them with judge calls through the gateway:
+Expected result: Trajectory CI creates two runs and a comparison report without judge calls. Use the dashboard to confirm that the traces are linked to eval task IDs and run IDs.
 
-```powershell
-python -m eval compare --task-set deepseek_smoke --run-id v2 --against v1
-```
+## Local Mock Flow
 
-The real API example uses:
-
-- `base_url=http://127.0.0.1:8000/v1`
-- `httpx.Client(trust_env=False)` to avoid local proxy settings breaking localhost calls
-- `X-Eval-Task-Id`, `X-Eval-Run-Id`, and `X-Session-Id` headers
-
-The matching task set is `eval/task_sets/deepseek_smoke.yaml`.
-
-
-## Agent release quality case
-
-This is the real Trajectory CI case study used in the README. It compares a complete baseline prompt against a shorter candidate prompt using real DeepSeek calls through the gateway.
-
-```powershell
-.venv\Scripts\activate
-python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline-YYYYMMDDHHMMSS --profile baseline
-python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --profile candidate
-python -m eval compare --task-set agent_release_quality --run-id candidate-YYYYMMDDHHMMSS --against baseline-YYYYMMDDHHMMSS --export-markdown docs\reports\agent-release-quality.md --no-fail-on-gate
-```
-
-The checked-in report shows a realistic tradeoff: the candidate is cheaper and faster, but the release gate fails because judge scoring detects a quality regression.
-
-## Mock upstream flow
-
-Use this when you want a no-cost local-only test. The mock server emulates an OpenAI-compatible upstream.
+Use this when you want a no-cost local validation. The mock server emulates an OpenAI-compatible upstream.
 
 Terminal 1:
 
@@ -95,4 +87,15 @@ python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --s
 python -m eval compare --task-set bilibili_agent_v1 --run-id v3 --against v1 --skip-judge
 ```
 
-After mock testing, restart the gateway with the real `.env` so production-like calls go to DeepSeek again.
+Expected result: `v2` shows a regression-style comparison, and `v3` demonstrates not-run task handling. After mock testing, restart the gateway with the real `.env` so provider calls go to DeepSeek again.
+
+## Anthropic Tool-Use Flow
+
+Use this when you want to verify the Anthropic Messages adapter through the same release-evidence gateway.
+
+```powershell
+.venv\Scripts\activate
+python example\anthropic_tool_agent_run.py "List the top-level files, then read README.md if it exists."
+```
+
+Expected result: the agent call is proxied through `http://127.0.0.1:8000/v1/messages`, and spans are tagged with session and tenant headers so they appear as trace evidence in the dashboard.
