@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from statistics import mean
 from typing import Protocol
 
@@ -9,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import EvalTaskStatus
 from eval.checks.registry import run_checks
 from eval.compare.diff import build_detail
+from eval.compare.gate import build_gate_result, summarize_gate_inputs
 from eval.compare.report import export_markdown, persist_report
 from eval.data_fetcher import FetchedTrajectory, fetch_trajectory
 from eval.loader import load_task_set
-from eval.schemas import EvalTask, JudgeResult, RunEvaluation, TaskComparisonDetail
+from eval.schemas import EvalTask, GateResult, JudgeResult, RunEvaluation, TaskComparisonDetail
 
 
 class Scorer(Protocol):
@@ -24,10 +26,19 @@ class CompareResult:
     report_id: str | None
     summary: dict
     details: dict[str, TaskComparisonDetail]
+    gate: GateResult
 
 
 def _passed(status: str) -> bool:
     return status == EvalTaskStatus.judged.value
+
+
+def _trajectory_metrics(trajectory: FetchedTrajectory) -> tuple[float, float | None]:
+    costs = [Decimal(span.cost_usd or 0) for span in trajectory.spans]
+    latencies = [span.latency_ms for span in trajectory.spans if span.latency_ms is not None]
+    total_cost = float(sum(costs, Decimal("0")))
+    avg_latency = round(mean(latencies), 2) if latencies else None
+    return total_cost, avg_latency
 
 
 def _average_score(runs: list[RunEvaluation]) -> float | None:
@@ -49,12 +60,15 @@ async def evaluate_run(
     if not trajectory.was_run:
         return RunEvaluation(run_id=run_id, status=EvalTaskStatus.not_run.value, trace_ids=[])
 
+    cost_usd, avg_latency_ms = _trajectory_metrics(trajectory)
     check_results = run_checks(task.checks, trajectory)
     if any(not result.passed for result in check_results):
         return RunEvaluation(
             run_id=run_id,
             status=EvalTaskStatus.hard_check_failed.value,
             trace_ids=trajectory.trace_ids,
+            cost_usd=cost_usd,
+            avg_latency_ms=avg_latency_ms,
             check_results=check_results,
         )
 
@@ -63,6 +77,8 @@ async def evaluate_run(
             run_id=run_id,
             status=EvalTaskStatus.judged.value,
             trace_ids=trajectory.trace_ids,
+            cost_usd=cost_usd,
+            avg_latency_ms=avg_latency_ms,
             check_results=check_results,
             judge=JudgeResult(score=0, reason="judge skipped"),
         )
@@ -72,11 +88,13 @@ async def evaluate_run(
 
     try:
         judge = scorer.score(task=task, trajectory=trajectory)
-    except Exception as exc:
+    except Exception:
         return RunEvaluation(
             run_id=run_id,
             status=EvalTaskStatus.judge_failed.value,
             trace_ids=trajectory.trace_ids,
+            cost_usd=cost_usd,
+            avg_latency_ms=avg_latency_ms,
             check_results=check_results,
             judge=None,
         )
@@ -85,6 +103,8 @@ async def evaluate_run(
         run_id=run_id,
         status=EvalTaskStatus.judged.value,
         trace_ids=trajectory.trace_ids,
+        cost_usd=cost_usd,
+        avg_latency_ms=avg_latency_ms,
         check_results=check_results,
         judge=judge,
     )
@@ -122,6 +142,10 @@ async def compare_runs(
         "run_b_average_score": _average_score(run_b_results),
         "regressed_count": sum(detail.diff.regressed for detail in details.values()),
     }
+    summary.update(summarize_gate_inputs(details=details, run_a_results=run_a_results, run_b_results=run_b_results))
+    gate = build_gate_result(gate=task_set.gate, details=details, summary=summary)
+    summary["gate"] = gate.model_dump(mode="json")
+
     report = await persist_report(
         session,
         task_set_name=task_set_name,
@@ -139,4 +163,4 @@ async def compare_runs(
             details=details,
             summary=summary,
         )
-    return CompareResult(report_id=str(report.report_id), summary=summary, details=details)
+    return CompareResult(report_id=str(report.report_id), summary=summary, details=details, gate=gate)

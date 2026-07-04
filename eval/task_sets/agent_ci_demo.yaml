@@ -1,0 +1,43 @@
+gate:
+  max_regressed_tasks: 0
+  max_failed_tasks: 0
+  max_not_run_tasks: 0
+  max_cost_increase_pct: 15
+  max_latency_increase_pct: 20
+
+tasks:
+  - task_id: "agent_answer_quality"
+    description: "The candidate agent should preserve answer quality after prompt/model changes."
+    input: "Explain why observability matters for LLM agents in one concise paragraph."
+    judge_rubric: |
+      Score high if the response clearly mentions debugging failures, tracing multi-step behavior,
+      and cost or latency visibility. Penalize vague answers that only say observability is useful.
+    checks:
+      - type: response_contains
+        keyword: "agent"
+      - type: max_steps
+        value: 4
+
+  - task_id: "agent_release_tradeoff"
+    description: "The candidate agent should explain the release tradeoff, not just minimize cost."
+    input: "A cheaper model reduces cost but lowers answer quality. Should we ship it? Answer in three bullet points."
+    judge_rubric: |
+      Score high if the response weighs quality, cost, latency, and regression risk together.
+      Penalize answers that recommend shipping solely because cost is lower.
+    checks:
+      - type: response_contains
+        keyword: "cost"
+      - type: max_steps
+        value: 4
+
+  - task_id: "agent_failure_debugging"
+    description: "The candidate agent should identify which evidence helps debug a failed tool-using task."
+    input: "An agent failed halfway through a task. What evidence would you inspect first?"
+    judge_rubric: |
+      Score high if the response prioritizes trace steps, tool calls, errors, model outputs,
+      and token/latency anomalies. Penalize generic debugging advice.
+    checks:
+      - type: response_contains
+        keyword: "trace"
+      - type: max_steps
+        value: 4

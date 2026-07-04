@@ -58,22 +58,39 @@ async def persist_report(
 
 
 def render_markdown(*, task_set_name: str, run_id_a: str, run_id_b: str, details: dict[str, TaskComparisonDetail], summary: dict) -> str:
+    gate = summary.get("gate") or {"status": "unknown", "failures": []}
     lines = [
         f"# Eval Report: {task_set_name}",
         "",
         f"Compared `{run_id_b}` against `{run_id_a}`.",
         "",
-        "## Summary",
-        "",
-        f"- Run A pass rate: {summary['run_a_pass_rate']:.2%}",
-        f"- Run B pass rate: {summary['run_b_pass_rate']:.2%}",
-        f"- Run A average score: {summary['run_a_average_score']}",
-        f"- Run B average score: {summary['run_b_average_score']}",
-        f"- Regressed tasks: {summary['regressed_count']}",
-        "",
-        "## Task Diff",
+        f"## Regression Gate: {str(gate.get('status', 'unknown')).upper()}",
         "",
     ]
+    failures = gate.get("failures") or []
+    if failures:
+        lines.extend([f"- {failure.get('message', failure)}" for failure in failures])
+    else:
+        lines.append("- All gate rules passed.")
+    lines.extend(
+        [
+            "",
+            "## Summary",
+            "",
+            f"- Run A pass rate: {summary['run_a_pass_rate']:.2%}",
+            f"- Run B pass rate: {summary['run_b_pass_rate']:.2%}",
+            f"- Run A average score: {summary['run_a_average_score']}",
+            f"- Run B average score: {summary['run_b_average_score']}",
+            f"- Regressed tasks: {summary['regressed_count']}",
+            f"- Candidate failed tasks: {summary.get('run_b_failed_count', 0)}",
+            f"- Candidate not-run tasks: {summary.get('run_b_not_run_count', 0)}",
+            f"- Cost: `{run_id_a}` ${summary.get('run_a_cost_usd', 0):.6f} -> `{run_id_b}` ${summary.get('run_b_cost_usd', 0):.6f} ({summary.get('cost_delta_pct')}%)",
+            f"- Avg latency: `{run_id_a}` {summary.get('run_a_avg_latency_ms')}ms -> `{run_id_b}` {summary.get('run_b_avg_latency_ms')}ms ({summary.get('latency_delta_pct')}%)",
+            "",
+            "## Task Diff",
+            "",
+        ]
+    )
     for task_id, detail in details.items():
         lines.extend(
             [

@@ -88,6 +88,8 @@ tasks:
             )
 
         assert result.summary["regressed_count"] == 1
+        assert result.gate.status == "failed"
+        assert result.summary["gate"]["status"] == "failed"
         detail = result.details[task_id]
         assert detail.run_a.status == "judged"
         assert detail.run_b.status == "not_run"
@@ -99,6 +101,7 @@ tasks:
         assert len(reports) == 1
         assert len(rows) == 1
         assert rows[0].detail["run_b"]["status"] == "not_run"
+        assert reports[0].summary["gate"]["status"] == "failed"
     finally:
         if db_available:
             async with session_factory() as session:

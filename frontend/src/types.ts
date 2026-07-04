@@ -58,13 +58,44 @@ export type AlertRecord = {
   detail: string;
 };
 
+export type GateFailure = {
+  rule: string;
+  actual: number;
+  limit: number;
+  message: string;
+};
+
+export type GateSummary = {
+  status?: string;
+  failures?: GateFailure[];
+  rules?: Record<string, number | null>;
+};
+
+export type EvalReportSummary = {
+  task_count?: number;
+  run_a_pass_rate?: number;
+  run_b_pass_rate?: number;
+  run_a_average_score?: number | null;
+  run_b_average_score?: number | null;
+  regressed_count?: number;
+  run_b_failed_count?: number;
+  run_b_not_run_count?: number;
+  run_a_cost_usd?: number;
+  run_b_cost_usd?: number;
+  cost_delta_pct?: number | null;
+  run_a_avg_latency_ms?: number | null;
+  run_b_avg_latency_ms?: number | null;
+  latency_delta_pct?: number | null;
+  gate?: GateSummary;
+};
+
 export type EvalReport = {
   report_id: string;
   task_set_name: string;
   run_id_a: string;
   run_id_b: string;
   created_at: string;
-  summary: Record<string, number>;
+  summary: EvalReportSummary;
 };
 
 export type EvalTaskResult = {

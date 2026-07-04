@@ -35,6 +35,14 @@ class CheckSpec(BaseModel):
         return self
 
 
+class RegressionGate(BaseModel):
+    max_regressed_tasks: int | None = Field(default=0, ge=0)
+    max_failed_tasks: int | None = Field(default=0, ge=0)
+    max_not_run_tasks: int | None = Field(default=0, ge=0)
+    max_cost_increase_pct: float | None = Field(default=None, ge=0)
+    max_latency_increase_pct: float | None = Field(default=None, ge=0)
+
+
 class EvalTask(BaseModel):
     task_id: Annotated[str, Field(min_length=1, max_length=255)]
     description: Annotated[str, Field(min_length=1)]
@@ -45,6 +53,7 @@ class EvalTask(BaseModel):
 
 class TaskSet(BaseModel):
     tasks: list[EvalTask]
+    gate: RegressionGate | None = None
 
     @model_validator(mode="after")
     def ensure_unique_task_ids(self) -> "TaskSet":
@@ -71,6 +80,8 @@ class RunEvaluation(BaseModel):
     run_id: str
     status: str
     trace_ids: list[str] = Field(default_factory=list)
+    cost_usd: float = 0.0
+    avg_latency_ms: float | None = None
     check_results: list[CheckResult] = Field(default_factory=list)
     judge: JudgeResult | None = None
 
@@ -86,3 +97,16 @@ class TaskComparisonDetail(BaseModel):
     run_a: RunEvaluation
     run_b: RunEvaluation
     diff: TaskDiff
+
+
+class GateFailure(BaseModel):
+    rule: str
+    actual: float | int
+    limit: float | int
+    message: str
+
+
+class GateResult(BaseModel):
+    status: str
+    failures: list[GateFailure] = Field(default_factory=list)
+    rules: dict[str, float | int | None] = Field(default_factory=dict)

@@ -1,11 +1,34 @@
-# Agent Observability Gateway
+# Trajectory CI
 
-Zero-intrusion local gateway for OpenAI-compatible and Anthropic LLM agent calls: point an agent's `base_url` at this service and get traces, token usage, latency, and cost records without adding instrumentation to the agent code.
+Trajectory CI is a local regression testing platform for AI Agent systems. Run a baseline and a candidate version of your agent, compare their task trajectories, and get a clear release verdict:
+
+```text
+REGRESSION GATE: PASSED
+```
+
+or:
+
+```text
+REGRESSION GATE: FAILED
+- regressed tasks 2 exceeded allowed 0
+- cost increase 31.4 exceeded allowed 15
+```
+
+The gateway, traces, cost, latency, and dashboard are supporting infrastructure for that CI decision. They answer why a candidate failed the gate: which task regressed, which trace changed, whether a task did not run, and whether a cheaper/faster change made quality unacceptable.
+
+## Why Not Just Use A Trace Tool?
+
+General LLM observability tools are good at showing individual calls. Trajectory CI is built around release decisions for agent changes:
+
+- **Regression-first:** the primary output is pass/fail for a baseline-vs-candidate run, not a pile of charts.
+- **Trajectory diff:** each task stores both runs, judge reasons, hard-check failures, and trace IDs for drill-down.
+- **Cost as a gate:** cost and latency are treated as release criteria, not just accounting metrics.
+- **Zero-intrusion capture:** OpenAI-compatible and Anthropic clients only need a local `base_url` change.
+- **Local-first:** traces and raw bodies can stay in your own Postgres while developing or demoing.
 
 ## Architecture
 
-Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL through SQLAlchemy async models. The React dashboard reads FastAPI dashboard APIs. Cost calculation uses a YAML pricing table.
-
+Agent client -> FastAPI proxy -> real LLM provider API. The proxy records traces/spans in PostgreSQL. `python -m eval compare` turns those traces into regression reports with gate verdicts. The React dashboard presents the latest gate status first, then lets you drill into calls, traces, cost, and eval task diffs.
 ## Local setup
 
 ```powershell
@@ -128,47 +151,55 @@ Coverage focus:
 - Streaming: mocked SSE forwarding verifies chunk passthrough, usage aggregation, and automatic OpenAI `stream_options.include_usage`.
 - Crash tolerance: a span committed at request start remains visible as `in_progress` when it is never finished.
 
-## Phase 2 trajectory evaluation
+## Agent Regression CI
 
-Phase 2 compares two runs of the same task set using traces already captured by the gateway.
-
-When running an agent for evaluation, add these headers to each LLM call:
-
-- `X-Eval-Task-Id`: task id from the YAML task set.
-- `X-Eval-Run-Id`: run id, for example `v1` or `v2`.
-- `X-Session-Id`: optional. If used, keep it unique per task/run, for example `{task_set}:{task_id}:{run_id}`.
-
-Task sets live under `eval/task_sets/`:
+A task set defines the tasks your agent must keep passing and the release gate a candidate run must satisfy:
 
 ```yaml
+gate:
+  max_regressed_tasks: 0
+  max_failed_tasks: 0
+  max_not_run_tasks: 0
+  max_cost_increase_pct: 15
+  max_latency_increase_pct: 20
+
 tasks:
-  - task_id: "hello_basic"
-    description: "Basic hello response smoke test"
-    input: "Hello"
+  - task_id: "agent_release_tradeoff"
+    description: "The agent should explain whether a cheaper candidate is safe to ship."
+    input: "A cheaper model reduces cost but lowers answer quality. Should we ship it?"
     checks:
       - type: response_contains
-        keyword: "Hello"
-      - type: max_steps
-        value: 8
+        keyword: "cost"
 ```
 
-Run a comparison:
+When running an agent for evaluation, tag each LLM call:
+
+- `X-Eval-Task-Id`: task id from the YAML task set.
+- `X-Eval-Run-Id`: run id, for example `baseline` or `candidate`.
+- `X-Session-Id`: optional; keep it unique per task/run, for example `{task_set}:{task_id}:{run_id}`.
+
+Run a baseline and candidate through your agent, then compare:
 
 ```powershell
 .venv\Scripts\activate
-python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --skip-judge
+python -m eval compare --task-set agent_ci_demo --run-id candidate --against baseline
 ```
 
-Use `--skip-judge` for local hard-check-only validation. Omit it to call the configured judge model through the local gateway. Judge calls are tagged with `X-Span-Type: llm_judge`, and compare queries exclude judge spans from agent trajectory data.
+The compare command prints a CI-style verdict and exits non-zero when the gate fails. Use `--no-fail-on-gate` if you want to inspect a failed report locally without failing the shell step.
+
+```text
+REGRESSION GATE: FAILED
+- regressed tasks 1 exceeded allowed 0
+Report: ...
+```
 
 Export a markdown report:
 
 ```powershell
-python -m eval compare --task-set bilibili_agent_v1 --run-id v2 --against v1 --export-markdown report.md
+python -m eval compare --task-set agent_ci_demo --run-id candidate --against baseline --export-markdown report.md
 ```
 
-The React dashboard has Eval and Trace views for historical reports, per-task diffs, and linked Phase 1 trace inspection.
-
+The React dashboard shows the latest Regression Gate first. Calls, Cost, and Trace views are investigation tools for explaining that red/green result.
 ## Configuration
 
 Environment variables are loaded from `.env`.

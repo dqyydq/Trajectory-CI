@@ -61,3 +61,22 @@ tasks:
 
     assert "task_id=bad-task" in str(exc.value)
     assert "tool_called check requires tool_name" in str(exc.value)
+
+def test_task_set_schema_accepts_regression_gate() -> None:
+    task_set = TaskSet.model_validate(
+        {
+            "gate": {"max_regressed_tasks": 0, "max_cost_increase_pct": 15},
+            "tasks": [
+                {
+                    "task_id": "task-a",
+                    "description": "desc",
+                    "input": "input",
+                    "checks": [],
+                }
+            ],
+        }
+    )
+
+    assert task_set.gate is not None
+    assert task_set.gate.max_regressed_tasks == 0
+    assert task_set.gate.max_cost_increase_pct == 15

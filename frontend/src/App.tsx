@@ -207,7 +207,12 @@ function App() {
 
   const errorRate = summary.call_count ? summary.error_count / summary.call_count : 0;
   const health = errorRate > 0.2 ? "Watch" : "Nominal";
-  const heroDetail = `${state.hours}h · ${state.tenantId || "all tenants"} · ${state.model || "all models"}`;
+  const heroDetail = `${state.hours}h / ${state.tenantId || "all tenants"} / ${state.model || "all models"}`;
+  const selectedReportRecord = reports.find((report) => report.report_id === selectedReport) ?? reports[0];
+  const gate = selectedReportRecord?.summary?.gate;
+  const gateStatus = gate?.status ?? "unknown";
+  const gateFailures = gate?.failures ?? [];
+  const gateSummary = selectedReportRecord?.summary;
 
   return (
     <main className="app-shell" data-build={buildLabel}>
@@ -215,8 +220,8 @@ function App() {
         <div className="brand-lockup">
           <Server size={20} />
           <div>
-            <strong>Agent Gateway</strong>
-            <span>Operational dashboard</span>
+            <strong>Trajectory CI</strong>
+            <span>Agent regression dashboard</span>
           </div>
         </div>
 
@@ -267,8 +272,8 @@ function App() {
       <section className="content-shell">
         <section className="hero-panel">
           <div>
-            <h1>Operational visibility for agent calls.</h1>
-            <p>Inspect cost, latency, tenant health, trace structure, and eval regressions without leaving the gateway.</p>
+            <h1>Regression CI for agent changes.</h1>
+            <p>Run baseline and candidate agents, get a red or green release gate, then drill into traces, cost, latency, and task diffs.</p>
           </div>
           <div className="target-panel">
             <span>Live target</span>
@@ -277,6 +282,26 @@ function App() {
         </section>
 
         {error ? <div className="error-banner">{error}</div> : null}
+
+        <section className={`gate-panel gate-${gateStatus}`}>
+          <div>
+            <span className="gate-kicker">Regression gate</span>
+            <h2>{gateStatus === "failed" ? "FAILED" : gateStatus === "passed" ? "PASSED" : "No report yet"}</h2>
+            <p>{selectedReportRecord ? `${selectedReportRecord.task_set_name}: ${selectedReportRecord.run_id_b} vs ${selectedReportRecord.run_id_a}` : "Run an eval compare to create the first CI report."}</p>
+          </div>
+          <div className="gate-rules">
+            {gateFailures.length ? gateFailures.map((failure) => (
+              <div className="gate-failure" key={failure.rule}>{failure.message}</div>
+            )) : <div className="gate-pass-copy">Quality, cost, latency, and task completion are inside the configured release gate.</div>}
+          </div>
+          <div className="gate-metrics">
+            <div><span>Regressed</span><strong>{fmtNum(gateSummary?.regressed_count)}</strong></div>
+            <div><span>Failed</span><strong>{fmtNum(gateSummary?.run_b_failed_count)}</strong></div>
+            <div><span>Not run</span><strong>{fmtNum(gateSummary?.run_b_not_run_count)}</strong></div>
+            <div><span>Cost delta</span><strong>{gateSummary?.cost_delta_pct == null ? "n/a" : `${gateSummary.cost_delta_pct.toFixed(1)}%`}</strong></div>
+            <div><span>Latency delta</span><strong>{gateSummary?.latency_delta_pct == null ? "n/a" : `${gateSummary.latency_delta_pct.toFixed(1)}%`}</strong></div>
+          </div>
+        </section>
 
         <section className="metric-grid">
           <MetricCard label="Health" value={health} detail={pct(errorRate)} tone={health === "Watch" ? "tone-danger" : "tone-good"} />
