@@ -139,6 +139,8 @@ function App() {
   const [tasks, setTasks] = useState<EvalTaskResult[]>([]);
   const [selectedReport, setSelectedReport] = useState("");
   const [activeTab, setActiveTab] = useState("calls");
+  const [draftTraceId, setDraftTraceId] = useState("");
+  const [draftSessionId, setDraftSessionId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -174,6 +176,16 @@ function App() {
   };
 
   useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setState((current) => {
+        if (current.traceId === draftTraceId && current.sessionId === draftSessionId) return current;
+        return { ...current, traceId: draftTraceId, sessionId: draftSessionId };
+      });
+    }, 450);
+    return () => window.clearTimeout(handle);
+  }, [draftTraceId, draftSessionId]);
+
+  useEffect(() => {
     void refresh();
   }, [state.hours, state.tenantId, state.model, state.status, state.traceId, state.sessionId]);
 
@@ -184,6 +196,14 @@ function App() {
     }
     api.evalTasks(selectedReport).then(setTasks).catch((exception) => setError(exception instanceof Error ? exception.message : String(exception)));
   }, [selectedReport]);
+
+  const applyFilters = () => {
+    if (state.traceId !== draftTraceId || state.sessionId !== draftSessionId) {
+      setState({ ...state, traceId: draftTraceId, sessionId: draftSessionId });
+      return;
+    }
+    void refresh();
+  };
 
   const errorRate = summary.call_count ? summary.error_count / summary.call_count : 0;
   const health = errorRate > 0.2 ? "Watch" : "Nominal";
@@ -233,13 +253,13 @@ function App() {
         </label>
         <label>
           Trace id
-          <input value={state.traceId} onChange={(event) => setState({ ...state, traceId: event.target.value })} placeholder="trace uuid" />
+          <input value={draftTraceId} onChange={(event) => setDraftTraceId(event.target.value)} placeholder="trace uuid" />
         </label>
         <label>
           Session id
-          <input value={state.sessionId} onChange={(event) => setState({ ...state, sessionId: event.target.value })} placeholder="session" />
+          <input value={draftSessionId} onChange={(event) => setDraftSessionId(event.target.value)} placeholder="session" />
         </label>
-        <button className="refresh-button" onClick={() => void refresh()} disabled={loading}>
+        <button className="refresh-button" onClick={applyFilters} disabled={loading}>
           <RefreshCcw size={16} /> Refresh
         </button>
       </aside>
@@ -319,7 +339,7 @@ function App() {
                 </thead>
                 <tbody>
                   {spans.map((span) => (
-                    <tr key={span.span_id} onClick={() => setState({ ...state, traceId: span.trace_id })}>
+                    <tr key={span.span_id} onClick={() => { setDraftTraceId(span.trace_id); setState({ ...state, traceId: span.trace_id }); }}>
                       <td><span className={`status status-${span.status}`}>{span.status}</span></td>
                       <td>{span.model ?? "unknown"}</td>
                       <td>{span.tenant_id ?? "default"}</td>

@@ -70,6 +70,15 @@ curl http://localhost:8000/v1/messages \
 
 For streaming, send `"stream": true`; the gateway forwards Anthropic SSE chunks unchanged and records a best-effort aggregate response when the stream closes.
 
+Run the interactive Anthropic tool-use example through the gateway:
+
+```powershell
+.venv\Scripts\activate
+python example\anthropic_tool_agent_run.py "List the top-level files, then read README.md if it exists."
+```
+
+The script loads `.env`, sends requests to `http://127.0.0.1:8000/v1/messages`, and tags spans with `X-Session-Id` / `X-Tenant-Id` so they appear in the dashboard. Set `ANTHROPIC_API_KEY` in `.env`; set `MODEL_ID` if you want a model other than the script default.
+
 ## Gateway auth, tenants, and alerts
 
 Gateway auth is optional and disabled by default. To enable it, set `GATEWAY_API_KEYS` to a comma-separated list and send `X-Gateway-Api-Key` on gateway requests. This is separate from upstream provider auth; `Authorization`, `x-api-key`, and provider version headers still pass through to the provider.
