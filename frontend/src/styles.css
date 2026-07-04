@@ -493,6 +493,42 @@ code { color: var(--cyan); }
   line-height: 1.7;
 }
 
+
+.header-actions {
+  display: grid;
+  gap: 12px;
+  align-self: stretch;
+}
+
+.language-toggle {
+  justify-self: end;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(103, 232, 249, .36);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255,255,255,.065);
+  padding: 0 13px;
+  font-weight: 800;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.language-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(103, 232, 249, .68);
+  background: rgba(103, 232, 249, .10);
+}
+
+.language-toggle:active { transform: translateY(0) scale(.99); }
+
+.language-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(103, 232, 249, .16);
+}
+
 .report-picker {
   border: 1px solid var(--stroke);
   border-radius: 8px;
@@ -681,6 +717,8 @@ code { color: var(--cyan); }
 .trace-link { min-height: 30px; margin-right: 6px; color: #061016; }
 
 @media (max-width: 1180px) {
+  .language-toggle { justify-self: start; }
+
   .product-header,
   .release-verdict,
   .workflow-panel,
