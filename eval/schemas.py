@@ -110,3 +110,4 @@ class GateResult(BaseModel):
     status: str
     failures: list[GateFailure] = Field(default_factory=list)
     rules: dict[str, float | int | None] = Field(default_factory=dict)
+    configured: bool = False

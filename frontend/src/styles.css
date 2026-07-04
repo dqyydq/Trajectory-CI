@@ -450,3 +450,248 @@ code { color: var(--cyan); }
   .hero-panel h1 { font-size: 42px; }
   .metric-grid, .payload-grid, .gate-metrics { grid-template-columns: 1fr; }
 }
+
+/* Release review information architecture */
+.release-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.product-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+  gap: 28px;
+  align-items: end;
+  padding: 18px 0 28px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.product-header h1 {
+  max-width: 980px;
+  margin: 0;
+  font-size: clamp(46px, 5vw, 82px);
+  line-height: .96;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.product-header p {
+  max-width: 760px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.report-picker {
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  padding: 18px;
+}
+
+.report-picker label {
+  display: grid;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.report-picker select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255,255,255,.07);
+  padding: 0 12px;
+}
+
+.report-picker option { color: #f7f8fc; background: #0b1220; }
+.report-picker small { display: block; margin-top: 12px; color: var(--muted); line-height: 1.5; }
+
+.release-verdict {
+  display: grid;
+  grid-template-columns: minmax(320px, .95fr) minmax(280px, .9fr) minmax(360px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  padding: 24px;
+  background: rgba(255,255,255,.055);
+  box-shadow: 0 16px 40px rgba(0,0,0,.24);
+}
+
+.release-verdict h2 {
+  margin: 10px 0 14px;
+  font-size: clamp(42px, 5.2vw, 78px);
+  line-height: .88;
+  letter-spacing: 0;
+}
+
+.release-verdict h3 {
+  margin: 0 0 10px;
+  font-size: 23px;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.release-verdict p { margin: 0; color: var(--muted); line-height: 1.6; }
+.release-failed { border-color: rgba(251, 113, 133, .55); background: rgba(251, 113, 133, .075); }
+.release-failed h2 { color: var(--red); }
+.release-passed { border-color: rgba(110, 231, 183, .45); background: rgba(110, 231, 183, .065); }
+.release-passed h2 { color: var(--green); }
+.release-no_gate { border-color: rgba(251, 191, 36, .46); background: rgba(251, 191, 36, .065); }
+.release-no_gate h2 { color: var(--amber); }
+.release-awaiting_candidate { border-color: rgba(103, 232, 249, .40); background: rgba(103, 232, 249, .055); }
+.release-awaiting_candidate h2 { color: var(--cyan); }
+.release-no_report h2 { color: rgba(247,248,252,.72); }
+
+.verdict-reasons {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+}
+
+.verdict-reasons > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.evidence-grid div {
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 8px;
+  padding: 13px;
+  background: rgba(0,0,0,.18);
+}
+
+.evidence-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 8px;
+}
+
+.evidence-grid strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.workflow-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
+  gap: 22px;
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(255,255,255,.045);
+}
+
+.workflow-copy h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.3vw, 48px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.workflow-copy p { margin: 16px 0 0; color: var(--muted); line-height: 1.65; }
+.workflow-steps { display: grid; gap: 12px; }
+
+.workflow-step {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(0,0,0,.17);
+}
+
+.workflow-step strong { display: block; font-size: 16px; margin-bottom: 5px; }
+.workflow-step p { margin: 0; color: var(--muted); line-height: 1.45; }
+
+.command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.command-row code {
+  display: block;
+  min-height: 42px;
+  border: 1px solid rgba(103,232,249,.24);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #a5f3fc;
+  background: rgba(2, 6, 12, .82);
+  overflow-wrap: anywhere;
+}
+
+.command-row button,
+.trace-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(103,232,249,.42);
+  border-radius: 8px;
+  color: #061016;
+  background: var(--cyan);
+  padding: 0 12px;
+  font-weight: 800;
+  transition: transform .16s ease, filter .16s ease;
+}
+
+.command-row button:hover,
+.trace-link:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.command-row button:active,
+.trace-link:active { transform: translateY(0) scale(.99); }
+
+.release-tabs { margin-top: 26px; }
+.gateway-panel { display: grid; gap: 22px; }
+.gateway-lower { grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr); }
+.inline-danger { color: #fecdd3; font-weight: 800; }
+.trace-link { min-height: 30px; margin-right: 6px; color: #061016; }
+
+@media (max-width: 1180px) {
+  .product-header,
+  .release-verdict,
+  .workflow-panel,
+  .gateway-lower { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .product-header h1 { font-size: 40px; }
+  .release-verdict { padding: 18px; }
+  .release-verdict h2 { font-size: 38px; }
+  .evidence-grid,
+  .command-row { grid-template-columns: 1fr; }
+  .command-row button { width: 100%; }
+}

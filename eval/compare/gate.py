@@ -40,7 +40,7 @@ def build_gate_result(*, gate: RegressionGate | None, details: dict[str, TaskCom
                 )
             )
 
-    return GateResult(status="failed" if failures else "passed", failures=failures, rules=rules)
+    return GateResult(status="failed" if failures else "passed", failures=failures, rules=rules, configured=gate is not None)
 
 
 def summarize_gate_inputs(*, details: dict[str, TaskComparisonDetail], run_a_results, run_b_results) -> dict:

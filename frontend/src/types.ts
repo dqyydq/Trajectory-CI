@@ -69,6 +69,7 @@ export type GateSummary = {
   status?: string;
   failures?: GateFailure[];
   rules?: Record<string, number | null>;
+  configured?: boolean;
 };
 
 export type EvalReportSummary = {
