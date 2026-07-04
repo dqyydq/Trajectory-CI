@@ -150,14 +150,16 @@ button { cursor: pointer; }
   line-height: 1.65;
 }
 
-.target-panel {
+.target-panel,
+.quickstart-panel {
   border: 1px solid var(--stroke);
   border-radius: 8px;
   background: rgba(7, 9, 13, 0.75);
   padding: 20px;
 }
 
-.target-panel span {
+.target-panel span,
+.quickstart-panel > span {
   display: block;
   color: var(--muted);
   font-size: 12px;
@@ -167,7 +169,27 @@ button { cursor: pointer; }
   margin-bottom: 10px;
 }
 
-.target-panel code { color: var(--cyan); white-space: normal; overflow-wrap: anywhere; }
+.target-panel code,
+.quickstart-panel code { color: var(--cyan); white-space: normal; overflow-wrap: anywhere; }
+
+.quickstart-panel ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.quickstart-panel li {
+  color: rgba(247,248,252,.74);
+  line-height: 1.45;
+}
+
+.quickstart-panel small {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 
 .error-banner {
   margin-top: 18px;

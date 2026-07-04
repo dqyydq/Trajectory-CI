@@ -272,12 +272,17 @@ function App() {
       <section className="content-shell">
         <section className="hero-panel">
           <div>
-            <h1>Regression CI for agent changes.</h1>
-            <p>Run baseline and candidate agents, get a red or green release gate, then drill into traces, cost, latency, and task diffs.</p>
+            <h1>Know if an agent change is safe to ship.</h1>
+            <p>Trajectory CI runs your baseline and candidate agent, compares quality, cost, and latency, then returns a red or green release gate.</p>
           </div>
-          <div className="target-panel">
-            <span>Live target</span>
-            <code>{heroDetail}</code>
+          <div className="quickstart-panel">
+            <span>Use it in three commands</span>
+            <ol>
+              <li><code>python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline --profile baseline</code></li>
+              <li><code>python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate --profile candidate</code></li>
+              <li><code>python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline</code></li>
+            </ol>
+            <small>Current view: {heroDetail}</small>
           </div>
         </section>
 
@@ -285,14 +290,14 @@ function App() {
 
         <section className={`gate-panel gate-${gateStatus}`}>
           <div>
-            <span className="gate-kicker">Regression gate</span>
+            <span className="gate-kicker">Release decision</span>
             <h2>{gateStatus === "failed" ? "FAILED" : gateStatus === "passed" ? "PASSED" : "No report yet"}</h2>
-            <p>{selectedReportRecord ? `${selectedReportRecord.task_set_name}: ${selectedReportRecord.run_id_b} vs ${selectedReportRecord.run_id_a}` : "Run an eval compare to create the first CI report."}</p>
+            <p>{selectedReportRecord ? `${selectedReportRecord.task_set_name}: ${selectedReportRecord.run_id_b} vs ${selectedReportRecord.run_id_a}` : "Run the three commands above to create the first release report."}</p>
           </div>
           <div className="gate-rules">
             {gateFailures.length ? gateFailures.map((failure) => (
               <div className="gate-failure" key={failure.rule}>{failure.message}</div>
-            )) : <div className="gate-pass-copy">Quality, cost, latency, and task completion are inside the configured release gate.</div>}
+            )) : <div className="gate-pass-copy">The candidate passed every configured release rule.</div>}
           </div>
           <div className="gate-metrics">
             <div><span>Regressed</span><strong>{fmtNum(gateSummary?.regressed_count)}</strong></div>

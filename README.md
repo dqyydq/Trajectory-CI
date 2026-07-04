@@ -16,6 +16,20 @@ REGRESSION GATE: FAILED
 
 The gateway, traces, cost, latency, and dashboard are supporting infrastructure for that CI decision. They answer why a candidate failed the gate: which task regressed, which trace changed, whether a task did not run, and whether a cheaper/faster change made quality unacceptable.
 
+
+## Use It In Three Commands
+
+After the local gateway is running, create a baseline run, create a candidate run, and compare them:
+
+```powershell
+.venv\Scripts\activate
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id baseline --profile baseline
+python example\deepseek_agent_run.py --task-set agent_release_quality --run-id candidate --profile candidate
+python -m eval compare --task-set agent_release_quality --run-id candidate --against baseline
+```
+
+The output is a release decision: `REGRESSION GATE: PASSED` or `REGRESSION GATE: FAILED`. The dashboard shows that decision first; trace, cost, latency, and judge reasons explain it.
+
 ## Why Not Just Use A Trace Tool?
 
 General LLM observability tools are good at showing individual calls. Trajectory CI is built around release decisions for agent changes:
